@@ -2,15 +2,16 @@
 
 # Setup the project (creates venv and installs requirements)
 setup:
-	chmod +x setup.sh && ./setup.sh
-
-# Activate the virtual environment (Mac/WSL)
-activate:
-	source demoApp/venv/bin/activate
+	chmod +x setup.sh
+	./setup.sh
 
 # Run the web app
 run:
-	source demoApp/venv/bin/activate && python demoApp/manage.py runserver
+	demoApp/venv/bin/python demoApp/manage.py runserver
+
+# Run the fake device simulator
+fakedevice:
+	demoApp/venv/bin/python demoApp/manage.py fake_device
 
 # Clean up venv (remove virtual environment)
 clean:
