@@ -6,11 +6,11 @@ cd "$(dirname "$0")/demoApp" || exit
 echo "Creating virtual environment..."
 python3 -m venv venv
 
-echo "Activating virtual environment and installing dependencies..."
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
+echo "Installing dependencies into virtual environment..."
+venv/bin/pip install --upgrade pip
+venv/bin/pip install -r requirements.txt
 
 echo "Setup complete."
-echo "To start the server, run:"
-echo "source venv/bin/activate && python manage.py runserver"
+echo "You can now use the Makefile to run the app:"
+echo "  make run       # Start the web server"
+echo "  make fakedevice # Run the fake device simulator"

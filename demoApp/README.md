@@ -13,47 +13,24 @@ cd PSU_CAPSTONE_F25
 
 ```
 
-### 2. Option A: Use the Setup Script (Mac / WSL)
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-### 2. Option B: Use Makefile (Mac / WSL)
-If you have `make` installed, you can simplify the setup:
+### 2. Use Makefile (Mac / WSL)
+If you have `make` installed:
 ```bash
 make setup
 ```
 
-### 3. Activate the Virtual Environment
-```bash
-source demoApp/venv/bin/activate
-```
-
-### 4. Run the Web App
-```bash
-python demoApp/manage.py runserver
-```
-Or, if using the Makefile:
+### 3. Run the Web App
 ```bash
 make run
 ```
 Then open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
-### 5. Run fake device script
-```bash
-python demoApp/manage.py fake_device
-```
-Or, if using the Makefile:
+### 4. Run fake device script
 ```bash
 make fakedevice
 ```
 
 ### 6. Cleaning up
-```bash
-deactivate
-```
-Or, if using the Makefile:
 ```bash
 make clean
 ```
