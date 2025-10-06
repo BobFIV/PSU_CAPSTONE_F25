@@ -1,17 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>IoT Dashboard</title>
+
   <!-- Bootstrap CSS -->
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
     rel="stylesheet"
   >
-  <!-- Bootstrap Icons -->
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" 
     rel="stylesheet"
   >
+
   <style>
     body, .card, pre, table {
       transition: background-color 0.3s, color 0.3s;
@@ -24,7 +26,7 @@
 
     .metric-card {
       min-height: 140px;
-      font-size: 1.0rem;
+      font-size: 1rem;
     }
 
     body.dark-mode .card {
@@ -35,11 +37,9 @@
     body.dark-mode .card-title {
       color: #f5f5f5;
     }
-
     body.dark-mode h2.fw-bold {
       color: #00e676;
     }
-
     body.dark-mode .text-success { color: #4caf50 !important; }
     body.dark-mode .text-danger { color: #ff5252 !important; }
     body.dark-mode .text-muted { color: #b0b0b0 !important; }
@@ -56,34 +56,19 @@
       background-color: #2a2a3d !important;
       color: #ffffff !important;
     }
-    body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
-      background-color: #252537 !important;
-    }
-    body.dark-mode .table-striped tbody tr:nth-of-type(even) {
-      background-color: #1e1e2f !important;
-    }
-    body.dark-mode .table td,
-    body.dark-mode .table th {
-      border-color: #2a2a3d !important;
-    }
-    body.dark-mode .table td:first-child {
-      color: #90caf9 !important;
-      font-family: monospace;
-    }
   </style>
 </head>
+
 <body>
   <div class="container py-5">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h1 class="mb-0">
           <i class="bi bi-bar-chart-fill text-primary"></i> IoT Device Dashboard
         </h1>
         <p class="text-muted small mb-0">
-        Device: <span id="device-name">{{ device.name }}</span> – 
-        <span id="device-type">{{ device.device_type }}</span> – 
-        <span id="device-network">{{ device.current_network }}</span>
+          Live data from oneM2M CSE: <code>cse-in/DummyData</code>
         </p>
       </div>
       <button id="toggleTheme" class="btn btn-outline-dark">
@@ -91,15 +76,39 @@
       </button>
     </div>
 
-    <!-- Metrics Row -->
+    <!-- Metrics -->
     <div class="row text-center mb-4 g-2">
+      <!-- Temperature -->
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm metric-card h-100">
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
+            <h6 class="text-muted">Temperature</h6>
+            <h2 id="temperature" class="fw-bold text-muted">
+              <i class="bi bi-thermometer"></i>
+            </h2>
+          </div>
+        </div>
+      </div>
+
+      <!-- Humidity -->
+      <div class="col-6 col-md-3">
+        <div class="card shadow-sm metric-card h-100">
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
+            <h6 class="text-muted">Humidity</h6>
+            <h2 id="humidity" class="fw-bold text-muted">
+              <i class="bi bi-droplet-half"></i>
+            </h2>
+          </div>
+        </div>
+      </div>
+
       <!-- Battery -->
       <div class="col-6 col-md-3">
         <div class="card shadow-sm metric-card h-100">
-          <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
             <h6 class="text-muted">Battery</h6>
-            <h2 id="battery" class="fw-bold text-danger">
-              <i class="bi bi-battery"></i>
+            <h2 id="battery" class="fw-bold text-muted">
+              <i class="bi bi-battery-half"></i>
             </h2>
           </div>
         </div>
@@ -108,42 +117,29 @@
       <!-- Signal -->
       <div class="col-6 col-md-3">
         <div class="card shadow-sm metric-card h-100">
-          <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
             <h6 class="text-muted">Signal</h6>
-            <h2 id="signal" class="fw-bold text-danger">
-              <i class="bi bi-wifi-off"></i>
-            </h2>
-          </div>
-        </div>
-      </div>
-
-      <!-- Temperature -->
-      <div class="col-6 col-md-3">
-        <div class="card shadow-sm metric-card h-100">
-          <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
-            <h6 class="text-muted">Temperature</h6>
-            <h2 id="temperature" class="fw-bold text-danger">
-              <i class="bi bi-thermometer"></i>
+            <h2 id="signal" class="fw-bold text-muted">
+              <i class="bi bi-wifi"></i>
             </h2>
           </div>
         </div>
       </div>
 
       <!-- Status -->
-      <div class="col-6 col-md-3">
+      <div class="col-12 col-md-3 mt-2">
         <div class="card shadow-sm metric-card h-100">
-          <div class="card-body d-flex flex-column justify-content-center align-items-center h-100">
+          <div class="card-body d-flex flex-column justify-content-center align-items-center">
             <h6 class="text-muted">Status</h6>
-            <h2 id="status" class="fw-bold text-danger d-flex align-items-center justify-content-center gap-2">
-              <i class="bi bi-x-circle"></i><span>Offline</span>
+            <h2 id="status" class="fw-bold text-muted">
+              <i class="bi bi-question-circle"></i> Checking...
             </h2>
-            <p id="status-note" class="text-muted small mb-0">Device not connected</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Recent Events Table -->
+    <!-- Events -->
     <div class="card shadow-sm">
       <div class="card-body">
         <h5 class="card-title">Recent Events</h5>
@@ -151,14 +147,12 @@
           <thead>
             <tr>
               <th>Timestamp</th>
-              <th>Device</th>
-              <th>Event</th>
+              <th>Parameter</th>
+              <th>Value</th>
             </tr>
           </thead>
           <tbody id="events-body">
-            <tr>
-              <td colspan="3" class="text-center text-muted">No recent events</td>
-            </tr>
+            <tr><td colspan="3" class="text-center text-muted">No data yet</td></tr>
           </tbody>
         </table>
       </div>
@@ -175,136 +169,82 @@
       document.body.classList.toggle("dark-mode");
       if (document.body.classList.contains("dark-mode")) {
         toggleBtn.textContent = "☀️ Light Mode";
-        toggleBtn.classList.remove("btn-outline-dark");
-        toggleBtn.classList.add("btn-outline-light");
+        toggleBtn.classList.replace("btn-outline-dark", "btn-outline-light");
       } else {
         toggleBtn.textContent = "🌙 Dark Mode";
-        toggleBtn.classList.remove("btn-outline-light");
-        toggleBtn.classList.add("btn-outline-dark");
+        toggleBtn.classList.replace("btn-outline-light", "btn-outline-dark");
       }
     });
   </script>
 
-  <!-- AJAX Polling -->
+  <!-- Live Data Fetch -->
   <script>
-    async function fetchLatest() {
+    async function fetchSensorData() {
+      const statusEl = document.getElementById("status");
       try {
-        const response = await fetch("/latest/");
+        const response = await fetch("/get_sensor_data/");
+        if (!response.ok) throw new Error("Network issue");
         const data = await response.json();
 
-        // Device header
-        document.getElementById("device-name").textContent = data.device.name;
-        document.getElementById("device-type").textContent = data.device.device_type;
-        document.getElementById("device-network").textContent = data.device.network;
-
-
-        // Battery
-        const batteryEl = document.getElementById("battery");
-        if (data.device && data.device.battery !== null) {
-        batteryEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-battery-full"></i>
-            <span>${data.device.battery}%</span>
-            </span>`;
-        batteryEl.className = `fw-bold ${data.device.battery > 20 ? "text-success" : "text-danger"}`;
-        } else {
-        batteryEl.innerHTML = `<i class="bi bi-battery text-danger"></i>`;
-        batteryEl.className = "fw-bold text-danger";
-        }
-
-
-        // Signal
-        const signalEl = document.getElementById("signal");
-
-        if (!data.device || data.device.signal === null || data.device.status === "Offline") {
-        // Show only red WiFi-off icon
-        signalEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-wifi-off text-danger"></i>
-            </span>`;
-        signalEl.className = "fw-bold text-danger";
-        } else {
-        // Normal handling for Excellent / Good / Fair / Weak
-        let barsIcon = "bi-wifi text-success";
-        let cls = "text-success";
-
-        if (data.device.signal === "Fair") {
-            barsIcon = "bi-wifi";
-            cls = "text-warning";
-        } else if (data.device.signal === "Weak") {
-            barsIcon = "bi-wifi";
-            cls = "text-danger";
-        }
-
-        signalEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-            <i class="${barsIcon}"></i>
-            <span class="${cls}">${data.device.signal}</span>
-            </span>`;
-        signalEl.className = `fw-bold ${cls}`;
-        }
-
-
-
-
+        // STATUS
+        statusEl.innerHTML = `<i class="bi bi-check-circle"></i> Online`;
+        statusEl.className = "fw-bold text-success";
 
         // Temperature
+        const temp = data.temperature !== "N/A" ? parseFloat(data.temperature).toFixed(1) : "--";
         const tempEl = document.getElementById("temperature");
-        if (data.device && data.device.temperature !== null) {
-        const tempFormatted = parseFloat(data.device.temperature).toFixed(1);
-        tempEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-            <i class="bi bi-thermometer-half"></i>
-            <span>${tempFormatted}°C</span>
-            </span>`;
-        tempEl.className = `fw-bold ${tempFormatted > 30 ? "text-danger" : "text-success"}`;
+        tempEl.innerHTML = `<i class="bi bi-thermometer-half"></i> ${temp}°C`;
+        tempEl.className = `fw-bold ${temp > 30 ? "text-danger" : "text-success"}`;
+
+        // Humidity
+        const hum = data.humidity !== "N/A" ? parseFloat(data.humidity).toFixed(1) : "--";
+        const humEl = document.getElementById("humidity");
+        humEl.innerHTML = `<i class="bi bi-droplet-half"></i> ${hum}%`;
+        humEl.className = `fw-bold ${hum > 70 ? "text-warning" : "text-success"}`;
+
+        // Battery
+        const bat = data.battery !== "N/A" ? parseFloat(data.battery) : null;
+        const batEl = document.getElementById("battery");
+        if (bat !== null) {
+          batEl.innerHTML = `<i class="bi bi-battery-full"></i> ${bat}%`;
+          batEl.className = `fw-bold ${bat < 20 ? "text-danger" : "text-success"}`;
         } else {
-        tempEl.innerHTML = `<i class="bi bi-thermometer text-danger"></i>`;
-        tempEl.className = "fw-bold text-danger";
+          batEl.innerHTML = `<i class="bi bi-battery text-muted"></i> --`;
         }
 
-
-        // Status
-        const statusEl = document.getElementById("status");
-        const statusNote = document.getElementById("status-note");
-        if (data.device.status === "Online") {
-          statusEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-              <i class="bi bi-check-circle"></i><span>Online</span>
-            </span>`;
-          statusEl.className = "fw-bold text-success d-flex align-items-center justify-content-center gap-2";
-          statusNote.textContent = "Connected and sending data";
+        // Signal
+        const sig = data.signal;
+        const sigEl = document.getElementById("signal");
+        if (sig === "N/A" || sig === null) {
+          sigEl.innerHTML = `<i class="bi bi-wifi-off text-danger"></i> Offline`;
+          sigEl.className = "fw-bold text-danger";
         } else {
-          statusEl.innerHTML = `
-            <span class="d-flex align-items-center justify-content-center gap-2">
-              <i class="bi bi-x-circle"></i><span>Offline</span>
-            </span>`;
-          statusEl.className = "fw-bold text-danger d-flex align-items-center justify-content-center gap-2";
-          statusNote.textContent = "Device not connected";
+          sigEl.innerHTML = `<i class="bi bi-wifi text-success"></i> ${sig}`;
+          sigEl.className = "fw-bold text-success";
         }
 
-        // Events
-        const eventsTable = document.getElementById("events-body");
-        eventsTable.innerHTML = "";
-        if (data.events.length === 0) {
-          eventsTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No recent events</td></tr>';
-        } else {
-          data.events.forEach(ev => {
-            eventsTable.innerHTML += `
-              <tr>
-                <td>${ev.timestamp}</td>
-                <td>${ev.device}</td>
-                <td>${ev.message}</td>
-              </tr>`;
-          });
+        // Events Table
+        const tbody = document.getElementById("events-body");
+        tbody.innerHTML = "";
+        const now = new Date().toLocaleTimeString();
+        for (const [key, value] of Object.entries(data)) {
+          tbody.innerHTML += `
+            <tr>
+              <td>${now}</td>
+              <td>${key}</td>
+              <td>${value}</td>
+            </tr>`;
         }
-      } catch (err) {
-        console.error("Failed to fetch latest data:", err);
+
+      } catch (error) {
+        statusEl.innerHTML = `<i class="bi bi-x-circle"></i> Offline`;
+        statusEl.className = "fw-bold text-danger";
+        console.error("Error fetching data:", error);
       }
     }
 
-    setInterval(fetchLatest, 3000);
-    fetchLatest();
+    fetchSensorData();
+    setInterval(fetchSensorData, 5000);
   </script>
 </body>
 </html>
