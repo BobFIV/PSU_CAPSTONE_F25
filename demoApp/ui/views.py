@@ -1,107 +1,81 @@
-from django.shortcuts import render, redirect
-from .models import Device, Event
-from django.http import JsonResponse
-from datetime import timedelta
-from django.utils import timezone
-import pytz
-from zoneinfo import ZoneInfo
-from django.http import JsonResponse
+# ui/views.py
 import requests
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
 
-BASE_URL = "http://54.164.106.20:8080/cse-in/DummyData"
-HEADERS = {
-    "X-M2M-Origin": "CAdmin",
-    "X-M2M-RVI": "3",
-    "X-M2M-RI": "tempReq2",
-    "Accept": "application/json"
-}
+def login_view(request):
+    return render(request, "ui/login.html")  # Render the login page when visiting root URL
 
-def dashboard(request):
-    device = Device.objects.order_by("-last_updated").first()
-    events = Event.objects.order_by("-timestamp")[:10]  # last 10 events
-    
-    return render(request, "ui/dashboard.html", {"device": device, "events": events})
+def logout_view(request):
+    return render(request, "ui/login.html")  # Render the login page when visiting root URL
 
-
+# Home page (After login)
 def home(request):
-    return render(request, "ui/dashboard.html")
+    return render(request, "ui/home.html")  # This renders the home page
 
-def get_sensor_data(request):
-    containers = ["temperature", "humidity", "battery", "signal"]  # add more as available
-    data = {}
-
-    for c in containers:
-        try:
-            url = f"{BASE_URL}/{c}/la"
-            response = requests.get(url, headers=HEADERS, timeout=3)
-            if response.status_code == 200:
-                value = response.json().get("m2m:cin", {}).get("con", "N/A")
-            else:
-                value = "N/A"
-        except Exception as e:
-            print(f"Error fetching {c}: {e}")
-            value = "N/A"
-        data[c] = value
-
-    return JsonResponse(data)
-
-
-def latest_data(request):
-    device = Device.objects.order_by("-last_updated").first()
-    events = Event.objects.order_by("-timestamp")[:5]
-    eastern = ZoneInfo("America/New_York")
-
-    if device:
-        # check if device is stale (>60s since last update)
-        stale = device.last_updated < timezone.now() - timedelta(seconds=15)
-
-        if stale:
-            new_status = "offline"
-        else:
-            # keep whatever status device_manager.py wrote (Online/Offline)
-            new_status = device.status or "online"
-
-        # log status change
-        if device.status != new_status:
-            Event.objects.create(
-                device=device,
-                message=f"Device went {new_status.capitalize()}"
-            )
-            device.status = new_status
-            device.save(update_fields=["status"])
-
-        # hide metrics if offline
-        if new_status == "offline":
-            battery = None
-            signal = None
-            temperature = None
-            network = None
-        else:
-            battery = device.battery
-            signal = device.signal_strength
-            temperature = device.temperature
-            network = device.current_network
-
-        device_data = {
-            "name": device.name,
-            "battery": battery,
-            "signal": signal,
-            "temperature": temperature,
-            "status": new_status,
-            "network": network,
-        }
-    else:
-        device_data = None
-
-    data = {
-        "device": device_data,
-        "events": [
-            {
-                "timestamp": e.timestamp.astimezone(eastern).strftime("%Y-%m-%d %H:%M:%S"),
-                "device": e.device.name,
-                "message": e.message,
-            }
-            for e in events
-        ],
+# Function to get AEs from IN-CSE
+def get_ae_names_from_cse():
+    url = 'http://54.164.106.20:8080/ColesLaptop'  
+    headers = {
+        'X-M2M-Origin': 'CAdmin',
+        'X-M2M-RVI': '3',
+        'X-M2M-RI': 'tempReq2',
+        'Accept': 'application/json'
     }
-    return JsonResponse(data)
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        if "m2m:ae" in data:
+            return [data["m2m:ae"]["rn"]]  # Return the AE's name as a list
+        else:
+            return []  # No AE found
+    else:
+        return []  # If request fails
+
+# View for device list page (View 1)
+def devices_list(request):
+    # Fetch AE names from IN-CSE
+    devices = get_ae_names_from_cse()  # Get AE names
+    return render(request, "ui/devices_list.html", {"devices": devices})  # Pass devices to template
+
+def get_container_data(ae_name, container_name):
+    url = f'http://54.164.106.20:8080/cse-in/{ae_name}/{container_name}/la'  # Modify with actual URL
+    headers = {
+        'X-M2M-Origin': 'CAdmin',
+        'X-M2M-RVI': '3',
+        'X-M2M-RI': 'tempReq2',
+        'Accept': 'application/json'
+    }
+
+    response = requests.get(url, headers=headers)
+
+    # Return the data if successful
+    if response.status_code == 200:
+        return response.json()  # This will be the data from the container
+    else:
+        return {"error": "Failed to fetch container data"}  # Error handling
+
+# Function to get container data for a device
+def device_detail(request, device_name):
+    # List of containers for this device
+    containers = ['battery', 'temperature', 'signal', 'humidity']
+    
+    # Initialize an empty dictionary to store container data
+    container_data = {}
+
+    # Loop through each container and fetch its data
+    for container in containers:
+        data = get_container_data(device_name, container)
+        # Extract just the 'cni' value from the container data
+        cni_value = data.get("m2m:cin", {}).get("con", None)
+        # Store the 'cni' value in the dictionary
+        container_data[container] = cni_value
+    
+    
+    # Pass the container data as a list of tuples (container_name, cni_value)
+    container_data_for_template = [(container, container_data[container]) for container in containers]
+
+    # Render the template and pass container data
+    return render(request, 'ui/device_detail.html', {'device_name': device_name, 'container_data': container_data_for_template})

@@ -1,0 +1,97 @@
+<!-- ui/templates/ui/login.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - IoT Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            width: 400px;
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .login-container h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .login-container p {
+            color: #555;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #1A73E8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .login-button:hover {
+            background-color: #1565C0;
+        }
+        .login-button:focus {
+            outline: none;
+        }
+        .login-footer {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #777;
+        }
+        .login-footer a {
+            color: #1A73E8;
+            text-decoration: none;
+        }
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>Welcome Back</h1>
+        <p>To access the IoT Dashboard, please log in.</p>
+        <!-- Use the Django template tag in a data attribute -->
+        <button class="login-button" id="login-button">Log In</button>
+        <div class="login-footer">
+            <p>Don't have an account? <a href="#">Sign Up</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Add event listener to login button
+        document.getElementById('login-button').addEventListener('click', function() {
+            // Use window.location.href to redirect to the home page
+            window.location.href = "{% url 'home' %}";
+        });
+    </script>
+
+</body>
+</html>

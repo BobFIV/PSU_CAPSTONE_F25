@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ device_name }} - Device Details</title>
+    <style>
+        /* Basic styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background-color: #1A73E8;
+            color: white;
+            padding: 30px;
+            text-align: center;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            padding: 40px;
+        }
+
+        .container h2 {
+            margin-bottom: 20px;
+        }
+
+        .container p {
+            font-size: 1.2rem;
+            color: #555;
+        }
+
+        .container ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .container li {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .container li:hover {
+            transform: translateY(-5px);
+        }
+
+        .home-button {
+            padding: 10px 20px;
+            background-color: #1A73E8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .home-button:hover {
+            background-color: #1565C0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>{{ device_name }} - Device Details</h1>
+        <p>Below are the containers and sensors for this device.</p>
+    </div>
+
+    <div class="container">
+        <h2>Containers:</h2>
+        {% if container_data %}
+            <ul>
+                {% for container, data in container_data %}
+                    <li><strong>{{ container }}</strong>: 
+                        {% if data.error %}
+                            <span>Error: {{ data.error }}</span>
+                        {% else %}
+                            <span>{{ data }}</span>  <!-- Display data of the container -->
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No containers found for this device. Please check if containers are created.</p>
+        {% endif %}
+        
+        <!-- Home Button -->
+        <button class="home-button" onclick="window.location.href='/home/'">Home</button>
+    </div>
+
+</body>
+</html>
