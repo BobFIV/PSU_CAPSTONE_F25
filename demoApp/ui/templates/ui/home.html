@@ -1,10 +1,9 @@
-<!-- ui/templates/ui/home.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - IoT Dashboard</title>
+    <title>IoT Dashboard Home</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -12,116 +11,143 @@
             margin: 0;
             padding: 0;
         }
+
         .header {
-            background-color: #1A73E8; /* Blue color for the header */
+            background-color: #1A73E8;
             color: white;
-            padding: 30px;
+            padding: 60px 20px;
             text-align: center;
-            font-size: 2.5rem;
         }
-        .container {
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8rem;
+            font-weight: bold;
+        }
+
+        .header p {
+            font-size: 1.4rem;
+            margin-top: 10px;
+        }
+
+        .card-container {
             display: flex;
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            flex-wrap: wrap; /* Allow cards to wrap on smaller screens */
-            gap: 30px;
-            padding: 20px;
-            min-height: 50vh; /* Make the container take up the full screen height */
-            text-align: center;
+            justify-content: center;
+            align-items: stretch;
+            gap: 40px;
+            flex-wrap: wrap;
+            padding: 50px 20px;
         }
+
         .card {
-            background-color: white;
+            background-color: #fff;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-            width: 300px; /* Fixed width for all cards */
-            height: 300px; /* Fixed height for all cards to maintain uniformity */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            flex: 1 1 280px;
+            max-width: 320px;
+            min-height: 320px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* Space between the content */
+            justify-content: space-between;
+            padding: 30px 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
         .card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
         }
-        .card h2 {
-            padding: 20px;
-            font-size: 1.5rem;
-            color: #333;
+
+        .card h3 {
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #222;
         }
+
         .card p {
-            padding: 0 20px 20px;
-            font-size: 1rem;
+            text-align: center;
+            font-size: 1.05rem;
             color: #555;
+            flex-grow: 1;
         }
-        .card-button {
-            padding: 12px 20px;
-            background-color: #1A73E8; /* Blue color for buttons */
+
+        .card button {
+            background-color: #1A73E8;
             color: white;
             border: none;
+            padding: 12px;
             border-radius: 8px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-bottom: 50px;  /* Controls the space below the button */
-           
-        }
-        .card-button:hover {
-            background-color: #1565C0; /* Darker blue on hover */
-        }
-        /* Logout button styling */
-        .logout-button {
-            padding: 10px 20px;
-            background-color: #e53e3e;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.2rem;
             cursor: pointer;
             transition: background-color 0.3s ease;
             margin-top: 20px;
         }
 
-        .logout-button:hover {
-            background-color: #c53030;
+        .card button:hover {
+            background-color: #1565C0;
+        }
+
+        .logout-btn {
+            position: fixed;
+            right: 40px;
+            top: 40px;
+            background-color: #e53935;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #c62828;
+        }
+
+        @media (max-width: 900px) {
+            .card-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .logout-btn {
+                position: static;
+                margin: 20px auto;
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
 
+    <button class="logout-btn" onclick="window.location.href='/'">Log Out</button>
+
     <div class="header">
         <h1>Welcome to the IoT Dashboard</h1>
         <p>Select a view to continue.</p>
     </div>
-    
-    <div class="container">
-        <!-- Select a Device Card -->
-        <div class="card" onclick="window.location.href='/devices/'">
-            <h2>Select a Device</h2>
+
+    <div class="card-container">
+        <div class="card">
+            <h3>Select a Device</h3>
             <p>Choose a device from the list and view its sensors and data.</p>
-            <button class="card-button">Go to Device Selection</button>
+            <button onclick="window.location.href='/devices/'">Go to Device Selection</button>
         </div>
 
-        <!-- Device Data Card -->
-        <div class="card" onclick="window.location.href='/device-data/'">
-            <h2>MN-CSE Registrations & Gateway Details</h2>
-            <p>View the different MN-CSEs registered to the IN-CSE along with the key information elements for each gateway.</p>
-            <button class="card-button">View Device Data</button>
+        <div class="card">
+            <h3>MN-CSE Registrations & Gateway Details</h3>
+            <p>View the different MN-CSEs registered to the IN-CSE along with key gateway information.</p>
+            <button onclick="window.location.href='/gateway_data/'">View Device Data</button>
         </div>
 
-        <!-- Analytics Card -->
-        <div class="card" onclick="window.location.href='/analytics/'">
-            <h2>Analytics</h2>
+        <div class="card">
+            <h3>Analytics</h3>
             <p>Explore data analytics and insights based on the devices and sensors.</p>
-            <button class="card-button">Go to Analytics</button>
+            <button onclick="window.location.href='/analytics/'">Go to Analytics</button>
         </div>
-
-         <!-- Example content here -->
-        <button class="logout-button" onclick="window.location.href='/logout/'">Log Out</button>  <!-- Logout button -->
-        
     </div>
 
 </body>

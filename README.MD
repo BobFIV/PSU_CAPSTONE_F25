@@ -46,7 +46,7 @@ PSU_CAPSTONE_F25/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/PSU_CAPSTONE_F25.git
+git clone https://github.com/BobFIV/PSU_CAPSTONE_F25.git
 cd PSU_CAPSTONE_F25
 ```
 
@@ -73,22 +73,16 @@ Until the **MN-CSE → IN-CSE** link is fully established, AEs and containers ar
 To create a new AE and its containers:
 ```bash
 cd scripts
-bash create_ae.sh
+./create_ae.sh
 ```
-To append new sensor readings to an existing AE:
-```bash
-bash append_ae_values.sh
-```
+You will be prompted to enter the AE name, Originator ID, and sensor values for containers (`temperature`, `humidity`, `battery`, `signal`).  
+The script will automatically update Django so the new AE appears in the device list.
 
-To automatically update the web dashboard to reflect a new AE:
-```bash
-bash update_views.sh
-```
 
 ---
 
 ## Current Status
-- The **web app** (`demoApp/`) is fully functional for visualizing ACME data.
+- The **web app** (`demoApp/`) is fully functional for visualizing ACME data, however backend must be updated manually.
 - The **ACME IN-CSE** is connected and supports AE creation via REST API.
 - The **MN-CSE integration** (Raspberry Pi gateways) is **in progress** and will soon handle automatic AE registration and real-time sensor updates.
 
@@ -96,27 +90,16 @@ bash update_views.sh
 
 ## Contributors
 
-- **Khairol Eimannajwan** — Full-Stack Developer / System Integration Lead  
-  Developed the full Django-based IoT dashboard, integrating the frontend UI with the backend ACME oneM2M server.  
-  Implemented automation scripts for AE creation, container management, and data synchronization between the web app and ACME-CSE.
+### oneM2M Team
+- **Cole Nelson** 
+- **Eric Shin**
+- **Donald Jeter Boswell**
+- **Khairol Eimannajwan**
 
-- **Donald Jeter Boswell** — Frontend Development  
-  Assisted in designing and refining the web application's user interface (UI) components and dashboard layout.
-
-- **Eric Shin** — oneM2M Integration / MN-CSE Development  
-  Focused on ACME-CSE configuration and MN-CSE deployment using Raspberry Pi for distributed IoT communication.
-
-- **Cole Nelson** — oneM2M Integration / MN-CSE Development  
-  Worked on connecting MN-CSE nodes to the IN-CSE and ensuring reliable oneM2M communication for real device data transfer.
-
-- **David Johnson** — Hardware Integration / Handover Testing  
-  Responsible for implementing and testing the hardware-level handover process between wireless interfaces.
-
-- **Ethan Liu** — Hardware Integration / Communication Testing  
-  Worked on configuring sensor nodes and validating the physical communication handover between MN-CSE and connected devices.
-
-- **Steven Bowman** — Hardware Design / Testing Coordination  
-  Assisted with Raspberry Pi setup, network configuration, and performance validation for hardware-level MN-CSE handover.
+### Embedded Systems Team
+- **David Johnson**
+- **Ethan Liu**
+- **Steven Bowman**
 
 ---
 
