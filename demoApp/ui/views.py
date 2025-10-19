@@ -1,6 +1,7 @@
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
+from .models import SensorReading
 
 # ---------------- CONFIG ----------------
 BASE_URL = "http://54.164.106.20:8080"
@@ -19,14 +20,13 @@ AE_ENDPOINTS = {
 }
 
 def login_view(request):
-    return render(request, "ui/login.html")  # Render the login page when visiting root URL
+    return render(request, "ui/login.html")
 
 def logout_view(request):
-    return render(request, "ui/login.html")  # Render the login page when visiting root URL
+    return render(request, "ui/login.html")
 
-# Home page (After login)
 def home(request):
-    return render(request, "ui/home.html")  # This renders the home page
+    return render(request, "ui/home.html")
 
 # ---------------- AE FETCH HELPER ----------------
 def get_ae_name_from_url(url):
@@ -63,6 +63,7 @@ def devices_list(request):
 def get_container_data(ae_name, container_name):
     """
     Fetch latest content instance for a given AE/container.
+    Also saves the reading to the database for logging.
     """
     url = f"{BASE_URL}/cse-in/{ae_name}/{container_name}/la"
     headers = HEADERS | {"X-M2M-RI": f"req_{ae_name}_{container_name}"}
@@ -70,7 +71,21 @@ def get_container_data(ae_name, container_name):
     try:
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            value = data.get("m2m:cin", {}).get("con")
+            
+            # Save to database for historical logging
+            if value is not None:
+                try:
+                    SensorReading.objects.create(
+                        device_name=ae_name,
+                        sensor_type=container_name,
+                        value=float(value)
+                    )
+                except (ValueError, TypeError):
+                    pass  # Skip if value can't be converted to float
+            
+            return data
     except requests.exceptions.RequestException:
         pass
     return {}
@@ -96,3 +111,25 @@ def device_detail(request, device_name):
         'ui/device_detail.html',
         {'device_name': device_name, 'container_data': container_data_for_template},
     )
+
+# ---------------- NEW: SENSOR LOGS API ----------------
+def sensor_logs(request, device_name, sensor_type):
+    """
+    API endpoint to fetch historical sensor readings from Django database.
+    Returns JSON data that the frontend can display.
+    """
+    # Fetch last 50 readings for this device/sensor
+    readings = SensorReading.objects.filter(
+        device_name=device_name,
+        sensor_type=sensor_type
+    )[:50]
+    
+    logs_data = [
+        {
+            'value': reading.value,
+            'timestamp': reading.timestamp.isoformat(),
+        }
+        for reading in readings
+    ]
+    
+    return JsonResponse({'logs': logs_data})
