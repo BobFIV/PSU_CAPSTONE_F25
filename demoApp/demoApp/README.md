@@ -16,3 +16,12 @@ curl -X POST \
   }'
 
 {"m2m:sub": 
+
+
+
+
+To test ngrok
+
+curl -X POST https://noelia-exuberant-anomalously.ngrok-free.dev/notify \
+-H "Content-Type: application/json" \
+-d '{"m2m:sgn":{"nev":{"rep":{"m2m:cin":{"con":"27.5"}}},"net":3}}}'
