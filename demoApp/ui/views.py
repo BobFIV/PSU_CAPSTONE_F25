@@ -2,6 +2,10 @@ import requests
 from django.shortcuts import render
 from django.http import JsonResponse
 from .models import SensorReading
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+import re
 
 # ---------------- CONFIG ----------------
 BASE_URL = "http://54.164.106.20:8080"
@@ -133,3 +137,19 @@ def sensor_logs(request, device_name, sensor_type):
     ]
     
     return JsonResponse({'logs': logs_data})
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def notify(request):
+    if request.method == 'POST':
+        raw_body = request.body.decode('utf-8', errors='ignore')
+        print("\n====================")
+        print("📥 RAW BODY RECEIVED:")
+        print("--------------------")
+        print(raw_body)
+        print("====================\n")
+        return JsonResponse({'status': 'received'})
+    else:
+        return JsonResponse({'error': 'Invalid method'}, status=405)
