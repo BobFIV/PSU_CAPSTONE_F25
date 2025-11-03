@@ -110,19 +110,9 @@ def device_detail(request, device_name):
         .first()
     )
 
-    # Get most recent humidity (optional)
-    latest_humidity = (
-        SensorReading.objects
-        .filter(device_name=device_name, sensor_type="humidity")
-        .order_by("-timestamp")
-        .first()
-    )
-
     container_data = []
     if latest_temp:
         container_data.append(("temperature", latest_temp.value))
-    if latest_humidity:
-        container_data.append(("humidity", latest_humidity.value))
 
     return render(
         request,
@@ -194,28 +184,16 @@ def notify(request):
             value = cin.get("con")
             if value is not None:
                 try:
-                    # Parse JSON string into Python dict
                     payload = json.loads(value)
-
-                    # Extract fields
                     tempC = payload.get("tempC")
-                    humidityPct = payload.get("humidityPct")
 
-                    print(f"🌡️ tempC: {tempC}, 💧 humidityPct: {humidityPct}")
+                    print(f"🌡️ tempC: {tempC}")
 
-                    # Save to database if available
                     if tempC is not None:
                         SensorReading.objects.create(
                             device_name=GATEWAY_NAME,
                             sensor_type="temperature",
                             value=float(tempC)
-                        )
-
-                    if humidityPct is not None:
-                        SensorReading.objects.create(
-                            device_name=GATEWAY_NAME,
-                            sensor_type="humidity",
-                            value=float(humidityPct)
                         )
 
                 except json.JSONDecodeError:

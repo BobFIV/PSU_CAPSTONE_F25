@@ -1,14 +1,14 @@
 Example command to redirect
 
 curl -X POST \
-  http://127.0.0.1:8080/cse-in/cbA_id-mn_WeFgxO8cud/aeA_DZuWwz6fDs/cntA_MLF7DXA97C \
+  http://127.0.0.1:8080/cse-in/cbA_id-mn_WeFgxO8cud/aeA_6OofTQxEJf/cntA_gw7TRQtKWP \
   -H "X-M2M-Origin: CAdmin" \
   -H "X-M2M-RI: 12345" \
   -H "X-M2M-RVI: 5" \
   -H "Content-Type: application/json;ty=23" \
   -d '{
     "m2m:sub": {
-      "rn": "sub_localdemo",
+      "rn": "sub_seeed_temp",
       "nu": ["http://127.0.0.1:8000/notify/"],
       "nct": 1,
       "enc": { "net": [3] }
