@@ -14,10 +14,10 @@ HEADERS = {
 }
 
 # Adjust this to your actual CSEAnnc name (gateway)
-GATEWAY_NAME = "cbA_id-mn_3Y6gUwVgo5"
+GATEWAY_NAME = "cbA_id-mn_WeFgxO8cud"
 
 # Adjust this to your container name inside AEAnnc
-CONTAINER_NAME = "cntA_eG8ei0FaHc"
+CONTAINER_NAME = "cntA_3e3M97AjNG"
 
 
 # ---------------- BASIC UI VIEWS ----------------
@@ -40,26 +40,6 @@ def devices_list(request):
     devices = [{"name": GATEWAY_NAME, "status": "online"}]
     return render(request, "ui/devices_list.html", {"devices": devices})
 
-
-# ---------------- FETCH LATEST SENSOR DATA ----------------
-def get_latest_sensor_value():
-    """
-    Fetch latest CIN (contentInstance) value for the single container
-    inside the announced gateway (CSEAnnc).
-    """
-    url = f"{BASE_URL}/cse-in/{GATEWAY_NAME}/aeA_Q0RnDcyaeg/{CONTAINER_NAME}/la"
-    headers = HEADERS | {
-        "X-M2M-RI": "req_latest",
-        "Accept": "application/json"
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("m2m:cin", {}).get("con")
-    except requests.exceptions.RequestException:
-        pass
-    return None
 
 
 # ---------------- DEVICE DETAIL ----------------
@@ -98,6 +78,24 @@ def device_detail(request, device_name):
             "container_data": container_data,
         },
     )
+    
+def latest_value(request, device_name, sensor_type):
+    latest = (
+        SensorReading.objects
+        .filter(device_name=device_name, sensor_type=sensor_type)
+        .order_by('-timestamp')
+        .first()
+    )
+
+    if latest:
+        return JsonResponse({
+            'device_name': latest.device_name,
+            'sensor_type': latest.sensor_type,
+            'value': latest.value,
+            'timestamp': latest.timestamp.isoformat()
+        })
+    else:
+        return JsonResponse({'error': 'No data found'}, status=404)
 
 
 
@@ -127,12 +125,11 @@ def notify(request):
     It parses the incoming body and stores the reading in your database.
     """
     if request.method == 'GET':
-        # ✅ respond to ACME verification pings
         return JsonResponse({'status': 'verification-ok'})
     if request.method == 'POST':
         raw_body = request.body.decode("utf-8", errors="ignore")
         print("\n====================")
-        print("📥 AW BODY RECEIVED:")
+        print("📥 RAW BODY RECEIVED:")
         print("--------------------")
         print(raw_body)
         print("====================\n")
@@ -173,3 +170,34 @@ def notify(request):
             print(f"[ERROR] Could not parse or save CIN: {e}")
 
     return JsonResponse({"status": "received"})
+
+
+def gateway_list(request):
+    """
+    Dynamically fetch all announced gateways (CSEAnncs) from the IN-CSE.
+    """
+    try:
+        headers = {
+            **HEADERS,
+            "X-M2M-RI": "reqGatewayList"
+        }
+
+        response = requests.get(f"{BASE_URL}/cse-in?rcn=6", headers=headers, timeout=5)
+        data = response.json()
+
+        gateways = []
+        refs = data.get("m2m:rrl", {}).get("rrf", [])
+
+        for item in refs:
+            if item.get("typ") == 10005:  # 10005 = CSEAnnc
+                gateways.append({
+                    "name": item.get("nm"),
+                    "path": item.get("val"),
+                    "type": "CSEAnnc"
+                })
+
+        return render(request, "ui/gateway_list.html", {"gateways": gateways})
+
+    except Exception as e:
+        print(f"[ERROR] Could not fetch gateway list: {e}")
+        return render(request, "ui/gateway_list.html", {"gateways": []})

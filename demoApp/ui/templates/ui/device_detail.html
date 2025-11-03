@@ -1,172 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ device_name }} - Temperature</title>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: #f4f4f9;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ device_name }} - Temperature</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        background: #f4f4f9;
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
 
-    h1 {
-      color: #1565C0;
-      margin-bottom: 10px;
-    }
+      h1 {
+        color: #1565c0;
+        margin-bottom: 10px;
+      }
 
-    .card {
-      background: #fff;
-      padding: 40px 60px;
-      border-radius: 16px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      transition: 0.3s;
-    }
+      .card {
+        background: #fff;
+        padding: 40px 60px;
+        border-radius: 16px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: 0.3s;
+      }
 
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      }
 
-    .icon {
-      font-size: 3rem;
-      color: #FF9800;
-      margin-bottom: 10px;
-    }
+      .icon {
+        font-size: 3rem;
+        color: #ff9800;
+        margin-bottom: 10px;
+      }
 
-    .temperature {
-      font-size: 3rem;
-      font-weight: bold;
-      color: #333;
-    }
+      .temperature {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #333;
+      }
 
-    .sub {
-      font-size: 1rem;
-      color: #777;
-      margin-top: 8px;
-    }
+      .sub {
+        font-size: 1rem;
+        color: #777;
+        margin-top: 8px;
+      }
 
-    .status {
-      margin-top: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 20px;
-      display: inline-block;
-    }
+      .status {
+        margin-top: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+      }
 
-    .status.good {
-      background: #E8F5E9;
-      color: #2E7D32;
-    }
+      .status.good {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
 
-    .status.warning {
-      background: #FFF3E0;
-      color: #E65100;
-    }
+      .status.warning {
+        background: #fff3e0;
+        color: #e65100;
+      }
 
-    .status.critical {
-      background: #FFEBEE;
-      color: #C62828;
-    }
+      .status.critical {
+        background: #ffebee;
+        color: #c62828;
+      }
 
-    .footer {
-      margin-top: 20px;
-      font-size: 0.9rem;
-      color: #999;
-    }
-  </style>
-</head>
-<body>
+      .footer {
+        margin-top: 20px;
+        font-size: 0.9rem;
+        color: #999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon">
+        <i class="fas fa-temperature-high"></i>
+      </div>
+      <h1>{{ device_name }}</h1>
 
-  <div class="card">
-    <div class="icon">
-      <i class="fas fa-temperature-high"></i>
-    </div>
-    <h1>{{ device_name }}</h1>
+      {% if container_data %} {% for container, data in container_data %}
+      <div class="temperature">{{ data }}°C</div>
+      <div class="sub" id="tempF"></div>
+      <div class="status" id="tempStatus"></div>
 
-    {% if container_data %}
-      {% for container, data in container_data %}
-        <div class="temperature">{{ data }}°C</div>
-        <div class="sub" id="tempF"></div>
-        <div class="status" id="tempStatus"></div>
+      <script>
+        (function () {
+          const tempC = parseFloat("{{ data }}");
+          const tempF = (tempC * 9) / 5 + 32;
+          document.getElementById("tempF").textContent =
+            tempC.toFixed(1) + "°C = " + tempF.toFixed(1) + "°F";
 
-        <script>
-          (function() {
-            const tempC = parseFloat('{{ data }}');
-            const tempF = (tempC * 9/5) + 32;
-            document.getElementById("tempF").textContent = tempC.toFixed(1) + "°C = " + tempF.toFixed(1) + "°F";
-
-            const statusEl = document.getElementById("tempStatus");
-            if (tempC >= 20 && tempC <= 25) {
-              statusEl.className = "status good";
-              statusEl.textContent = "Optimal";
-            } else if (tempC > 25 && tempC <= 28) {
-              statusEl.className = "status warning";
-              statusEl.textContent = "Warm";
-            } else if (tempC > 28) {
-              statusEl.className = "status critical";
-              statusEl.textContent = "Hot";
-            } else if (tempC >= 18) {
-              statusEl.className = "status warning";
-              statusEl.textContent = "Cool";
-            } else {
-              statusEl.className = "status critical";
-              statusEl.textContent = "Cold";
-            }
-          })();
-        </script>
-      {% endfor %}
-    {% else %}
+          const statusEl = document.getElementById("tempStatus");
+          if (tempC >= 20 && tempC <= 25) {
+            statusEl.className = "status good";
+            statusEl.textContent = "Optimal";
+          } else if (tempC > 25 && tempC <= 28) {
+            statusEl.className = "status warning";
+            statusEl.textContent = "Warm";
+          } else if (tempC > 28) {
+            statusEl.className = "status critical";
+            statusEl.textContent = "Hot";
+          } else if (tempC >= 18) {
+            statusEl.className = "status warning";
+            statusEl.textContent = "Cool";
+          } else {
+            statusEl.className = "status critical";
+            statusEl.textContent = "Cold";
+          }
+        })();
+      </script>
+      {% endfor %} {% else %}
       <p>No temperature data available.</p>
-    {% endif %}
-  </div>
+      {% endif %}
+    </div>
     <script>
-    async function refreshData() {
+      async function refreshData() {
         try {
-            const response = await fetch(`/api/logs/{{ device_name }}/temperature/`);
-            const data = await response.json();
-            const latest = data.logs?.[0];
-            if (!latest) return;
+          const res = await fetch(
+            `/api/latest/{{ device_name }}/temperature/`
+          );
+          const data = await res.json();
+          if (!data.value) return;
 
-            const latestValue = latest.value;
-            const display = document.querySelector(".value-display");
-            if (display) {
-                display.textContent = latestValue.toFixed(1);
-            }
+          const tempC = parseFloat(data.value);
+          const tempF = (tempC * 9) / 5 + 32;
 
-            // Optional: Update Fahrenheit conversion
-            const tempF = (latestValue * 9/5) + 32;
-            const tempDisplay = document.getElementById("temp-f-1");
-            if (tempDisplay) {
-                tempDisplay.textContent = `${latestValue.toFixed(1)}°C = ${tempF.toFixed(1)}°F`;
-            }
-
-            console.log(`Updated temperature: ${latestValue}°C`);
-        } catch (error) {
-            console.error("Error refreshing data:", error);
+          document.querySelector(".temperature").textContent = `${tempC.toFixed(
+            1
+          )}°C`;
+          document.getElementById("tempF").textContent = `${tempC.toFixed(
+            1
+          )}°C = ${tempF.toFixed(1)}°F`;
+          console.log(`Updated live value: ${tempC}°C`);
+        } catch (err) {
+          console.error("Update failed:", err);
         }
-    }
+      }
 
-    // Refresh every 5 seconds
-    setInterval(refreshData, 5000);
-
-    // Run once when page loads
-    refreshData();
+      setInterval(refreshData, 3000);
+      refreshData();
     </script>
 
-
-  <div class="footer">
-    Last updated from IN-CSE (latest content instance)
-  </div>
-
-</body>
+    <div class="footer">Last updated from IN-CSE (latest content instance)</div>
+  </body>
 </html>

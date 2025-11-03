@@ -7,9 +7,9 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('devices/', views.devices_list, name='devices_list'),
     path('logout/', views.logout_view, name='logout'),
-    path('devices/<str:device_name>/', views.device_detail, name='device_detail'),  # ✅ add this
+    path('devices/<str:device_name>/', views.device_detail, name='device_detail'),
     path('notify', views.notify, name='notify'),
-    
-    # New API endpoint for sensor logs
+    path('gateways/', views.gateway_list, name='gateway_list'),
+    path('api/latest/<str:device_name>/<str:sensor_type>/', views.latest_value, name='latest_value'),
     path('api/logs/<str:device_name>/<str:sensor_type>/', views.sensor_logs, name='sensor_logs'),
 ]
