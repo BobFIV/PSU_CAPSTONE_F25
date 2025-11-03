@@ -88,14 +88,18 @@
     <div class="container">
         <!-- Dynamically render the list of AE names -->
         {% for device in devices %}
-            <div class="device-card" onclick="window.location.href='/device-detail/{{ device }}'">
-                <h3>{{ device }}</h3>  <!-- Display AE name (rn) -->
-                <p>Click to see details and sensors for {{ device }}.</p>
-            </div>
-        {% empty %}
-            <p>No devices available.</p>
+        <div class="device-card" onclick="openDevice('{{ device.name }}')">
+            <h3>{{ device.name }}</h3>
+            <p>Click to see details and sensors for {{ device.name }}.</p>
+        </div>
         {% endfor %}
     </div>
+    <script>
+    function openDevice(name) {
+        // encode for safety
+        window.location.href = `/devices/${encodeURIComponent(name)}/`;
+    }
+    </script>
 
 </body>
 </html>

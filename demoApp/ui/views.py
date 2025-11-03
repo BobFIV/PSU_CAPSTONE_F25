@@ -1,28 +1,26 @@
 import requests
+import json
 from django.shortcuts import render
 from django.http import JsonResponse
-from .models import SensorReading
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-import json
-import re
+from .models import SensorReading
 
 # ---------------- CONFIG ----------------
-BASE_URL = "http://54.164.106.20:8080"
+BASE_URL = "http://192.168.0.102:8080"
 HEADERS = {
     "X-M2M-Origin": "CAdmin",
     "X-M2M-RVI": "3",
     "Accept": "application/json",
 }
 
-# List of known AEs and their URLs 
-# ADD YOUR AE ENDPOINT HERE
-AE_ENDPOINTS = {
-    "Device_2": f"{BASE_URL}/CDevice2",
-    "DummyData": f"{BASE_URL}/ColesLaptop",  
-    "Device_1": f"{BASE_URL}/CDevice1",      
-}
+# Adjust this to your actual CSEAnnc name (gateway)
+GATEWAY_NAME = "cbA_id-mn_3Y6gUwVgo5"
 
+# Adjust this to your container name inside AEAnnc
+CONTAINER_NAME = "cntA_eG8ei0FaHc"
+
+
+# ---------------- BASIC UI VIEWS ----------------
 def login_view(request):
     return render(request, "ui/login.html")
 
@@ -32,124 +30,146 @@ def logout_view(request):
 def home(request):
     return render(request, "ui/home.html")
 
-# ---------------- AE FETCH HELPER ----------------
-def get_ae_name_from_url(url):
+
+# ---------------- DEVICE LIST ----------------
+def devices_list(request):
     """
-    Reusable helper to fetch AE name from a given URL.
-    Returns AE name string if found, else None.
+    For now: show a single device corresponding to one gateway (CSEAnnc).
+    Later you can expand to dynamically list all gateways under /cse-in.
     """
-    headers = HEADERS | {"X-M2M-RI": "req_getAE"}
+    devices = [{"name": GATEWAY_NAME, "status": "online"}]
+    return render(request, "ui/devices_list.html", {"devices": devices})
+
+
+# ---------------- FETCH LATEST SENSOR DATA ----------------
+def get_latest_sensor_value():
+    """
+    Fetch latest CIN (contentInstance) value for the single container
+    inside the announced gateway (CSEAnnc).
+    """
+    url = f"{BASE_URL}/cse-in/{GATEWAY_NAME}/aeA_Q0RnDcyaeg/{CONTAINER_NAME}/la"
+    headers = HEADERS | {
+        "X-M2M-RI": "req_latest",
+        "Accept": "application/json"
+    }
     try:
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
-            ae_name = data.get("m2m:ae", {}).get("rn")
-            return ae_name
+            return data.get("m2m:cin", {}).get("con")
     except requests.exceptions.RequestException:
         pass
     return None
 
-# ---------------- DEVICE LIST VIEW ----------------
-def devices_list(request):
-    """
-    Fetch all AE names from known endpoints and display in devices list.
-    """
-    devices = []
 
-    for label, url in AE_ENDPOINTS.items():
-        ae_name = get_ae_name_from_url(url)
-        if ae_name:
-            devices.append(ae_name)
-    devices.sort(key=lambda name: name.lower())
-    return render(request, "ui/devices_list.html", {"devices": devices})
-
-# ---------------- CONTAINER DATA HELPER ----------------
-def get_container_data(ae_name, container_name):
-    """
-    Fetch latest content instance for a given AE/container.
-    Also saves the reading to the database for logging.
-    """
-    url = f"{BASE_URL}/cse-in/{ae_name}/{container_name}/la"
-    headers = HEADERS | {"X-M2M-RI": f"req_{ae_name}_{container_name}"}
-
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            value = data.get("m2m:cin", {}).get("con")
-            
-            # Save to database for historical logging
-            if value is not None:
-                try:
-                    SensorReading.objects.create(
-                        device_name=ae_name,
-                        sensor_type=container_name,
-                        value=float(value)
-                    )
-                except (ValueError, TypeError):
-                    pass  # Skip if value can't be converted to float
-            
-            return data
-    except requests.exceptions.RequestException:
-        pass
-    return {}
-
-# ---------------- DEVICE DETAIL VIEW ----------------
+# ---------------- DEVICE DETAIL ----------------
 def device_detail(request, device_name):
     """
-    Display all container values for a given AE.
+    Display the most recent reading stored in the Django DB
+    (populated via /notify).
     """
-    containers = ['battery', 'temperature', 'signal', 'humidity']
-    container_data = {}
+    # Get most recent temperature reading
+    latest_temp = (
+        SensorReading.objects
+        .filter(device_name=device_name, sensor_type="temperature")
+        .order_by("-timestamp")
+        .first()
+    )
 
-    for container in containers:
-        data = get_container_data(device_name, container)
-        container_data[container] = data.get("m2m:cin", {}).get("con")
+    # Get most recent humidity (optional)
+    latest_humidity = (
+        SensorReading.objects
+        .filter(device_name=device_name, sensor_type="humidity")
+        .order_by("-timestamp")
+        .first()
+    )
 
-    container_data_for_template = [
-        (name, container_data[name]) for name in containers
-    ]
+    container_data = []
+    if latest_temp:
+        container_data.append(("temperature", latest_temp.value))
+    if latest_humidity:
+        container_data.append(("humidity", latest_humidity.value))
 
     return render(
         request,
-        'ui/device_detail.html',
-        {'device_name': device_name, 'container_data': container_data_for_template},
+        "ui/device_detail.html",
+        {
+            "device_name": device_name,
+            "container_data": container_data,
+        },
     )
 
-# ---------------- NEW: SENSOR LOGS API ----------------
+
+
+# ---------------- HISTORICAL LOGS ----------------
 def sensor_logs(request, device_name, sensor_type):
     """
-    API endpoint to fetch historical sensor readings from Django database.
-    Returns JSON data that the frontend can display.
+    Returns the last 50 readings stored in your Django DB.
+    These are populated by the /notify subscription endpoint.
     """
-    # Fetch last 50 readings for this device/sensor
     readings = SensorReading.objects.filter(
         device_name=device_name,
         sensor_type=sensor_type
-    )[:50]
-    
+    ).order_by("-timestamp")[:50]
+
     logs_data = [
-        {
-            'value': reading.value,
-            'timestamp': reading.timestamp.isoformat(),
-        }
+        {"value": reading.value, "timestamp": reading.timestamp.isoformat()}
         for reading in readings
     ]
-    
-    return JsonResponse({'logs': logs_data})
+    return JsonResponse({"logs": logs_data})
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
+# ---------------- NOTIFY (Subscription Callback) ----------------
 @csrf_exempt
 def notify(request):
+    """
+    Subscription endpoint that ACME calls when new CINs are created.
+    It parses the incoming body and stores the reading in your database.
+    """
+    if request.method == 'GET':
+        # ✅ respond to ACME verification pings
+        return JsonResponse({'status': 'verification-ok'})
     if request.method == 'POST':
-        raw_body = request.body.decode('utf-8', errors='ignore')
+        raw_body = request.body.decode("utf-8", errors="ignore")
         print("\n====================")
-        print("📥 RAW BODY RECEIVED:")
+        print("📥 AW BODY RECEIVED:")
         print("--------------------")
         print(raw_body)
         print("====================\n")
-        return JsonResponse({'status': 'received'})
-    else:
-        return JsonResponse({'error': 'Invalid method'}, status=405)
+
+        try:
+            body = json.loads(raw_body)
+            cin = body.get("m2m:sgn", {}).get("nev", {}).get("rep", {}).get("m2m:cinA", {})
+            value = cin.get("con")
+            if value is not None:
+                try:
+                    # Parse JSON string into Python dict
+                    payload = json.loads(value)
+
+                    # Extract fields
+                    tempC = payload.get("tempC")
+                    humidityPct = payload.get("humidityPct")
+
+                    print(f"🌡️ tempC: {tempC}, 💧 humidityPct: {humidityPct}")
+
+                    # Save to database if available
+                    if tempC is not None:
+                        SensorReading.objects.create(
+                            device_name=GATEWAY_NAME,
+                            sensor_type="temperature",
+                            value=float(tempC)
+                        )
+
+                    if humidityPct is not None:
+                        SensorReading.objects.create(
+                            device_name=GATEWAY_NAME,
+                            sensor_type="humidity",
+                            value=float(humidityPct)
+                        )
+
+                except json.JSONDecodeError:
+                    print(f"⚠️ con was not valid JSON: {value}")
+        except Exception as e:
+            print(f"[ERROR] Could not parse or save CIN: {e}")
+
+    return JsonResponse({"status": "received"})

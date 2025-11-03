@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Gateways</title>
+  <style>
+    body { font-family: Arial; background: #f4f4f9; padding: 40px; }
+    .card {
+      background: white; border-radius: 12px; padding: 24px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 16px;
+    }
+    .card h3 { margin: 0 0 10px; color: #1A73E8; }
+    .card a {
+      display: inline-block; margin-top: 10px; color: white; background: #1A73E8;
+      padding: 8px 16px; border-radius: 6px; text-decoration: none;
+    }
+    .card a:hover { background: #1558c0; }
+  </style>
+</head>
+<body>
+  <h1>Registered Gateways</h1>
+  {% if gateways %}
+    {% for g in gateways %}
+      <div class="card">
+        <h3>{{ g.gateway }}</h3>
+        <p>Latest reading: {{ g.latest|default:"No data yet" }}</p>
+        <a href="/gateway/{{ g.gateway }}/">View details</a>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No gateways registered.</p>
+  {% endif %}
+</body>
+</html>

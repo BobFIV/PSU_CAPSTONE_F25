@@ -7,7 +7,7 @@ urlpatterns = [
     path('home/', views.home, name='home'),
     path('devices/', views.devices_list, name='devices_list'),
     path('logout/', views.logout_view, name='logout'),
-    path('device-detail/<str:device_name>/', views.device_detail, name='device_detail'),
+    path('devices/<str:device_name>/', views.device_detail, name='device_detail'),  # ✅ add this
     path('notify', views.notify, name='notify'),
     
     # New API endpoint for sensor logs
