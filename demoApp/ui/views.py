@@ -13,13 +13,6 @@ HEADERS = {
     "Accept": "application/json",
 }
 
-# Adjust this to your actual CSEAnnc name (gateway)
-GATEWAY_NAME = "cbA_id-mn_WeFgxO8cud"
-
-# Adjust this to your container name inside AEAnnc
-CONTAINER_NAME = "cntA_3e3M97AjNG"
-
-
 # ---------------- BASIC UI VIEWS ----------------
 def login_view(request):
     return render(request, "ui/login.html")
@@ -105,7 +98,7 @@ def device_detail(request, device_name):
     # Get most recent temperature reading
     latest_temp = (
         SensorReading.objects
-        .filter(device_name=device_name, sensor_type="temperature")
+        .filter(device_name="cbA_id-mn_WeFgxO8cud", sensor_type="temperature")
         .order_by("-timestamp")
         .first()
     )
@@ -118,7 +111,7 @@ def device_detail(request, device_name):
         request,
         "ui/device_detail.html",
         {
-            "device_name": device_name,
+            "device_name": "cbA_id-mn_WeFgxO8cud",
             "container_data": container_data,
         },
     )
@@ -191,7 +184,7 @@ def notify(request):
 
                     if tempC is not None:
                         SensorReading.objects.create(
-                            device_name=GATEWAY_NAME,
+                            device_name="cbA_id-mn_WeFgxO8cud",
                             sensor_type="temperature",
                             value=float(tempC)
                         )
