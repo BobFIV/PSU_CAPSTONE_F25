@@ -32,13 +32,67 @@ def home(request):
 
 
 # ---------------- DEVICE LIST ----------------
-def devices_list(request):
+def device_list(request):
     """
-    For now: show a single device corresponding to one gateway (CSEAnnc).
-    Later you can expand to dynamically list all gateways under /cse-in.
+    Dynamically fetch all AEAnncs (devices) registered under any gateway,
+    and display their human-readable labels (lbl) when available.
     """
-    devices = [{"name": GATEWAY_NAME, "status": "online"}]
-    return render(request, "ui/devices_list.html", {"devices": devices})
+    try:
+        headers = {**HEADERS, "X-M2M-RI": "reqDeviceList"}
+        response = requests.get(f"{BASE_URL}/cse-in?rcn=6", headers=headers, timeout=5)
+        data = response.json()
+
+        refs = data.get("m2m:rrl", {}).get("rrf", [])
+        devices = []
+
+        for item in refs:
+            if item.get("typ") == 10002:  # AEAnnc
+                path = item.get("val", "")
+                ae_name = item.get("nm")
+
+                # Extract gateway name from the path (e.g., cbA_id-mn_WeFgxO8cud)
+                path_parts = path.split("/")
+                gateway_name = path_parts[5] if len(path_parts) > 5 else "Unknown"
+
+                # Clean up path to make a valid REST URL (drop /id-in prefix)
+                clean_path = path.replace("/id-in", "")
+
+                label = ae_name  # fallback
+                try:
+                    ae_response = requests.get(
+                        f"{BASE_URL}{clean_path}",
+                        headers={**HEADERS, "X-M2M-RI": f"reqFetchAE_{ae_name}"},
+                        timeout=3,
+                    )
+                    ae_data = ae_response.json()
+                    print(ae_data)  # debug to verify structure
+
+                    lbls = (
+                        ae_data.get("m2m:aeA", {}).get("lbl")
+                        or ae_data.get("m2m:aeAnnc", {}).get("lbl")
+                        or []
+                    )
+                    if lbls:
+                        label = ", ".join(lbls)
+
+                except Exception as e:
+                    print(f"⚠️ Could not fetch labels for {ae_name}: {e}")
+
+                devices.append({
+                    "name": ae_name,
+                    "label": label,
+                    "path": path,
+                    "gateway": gateway_name,
+                })
+
+
+        return render(request, "ui/device_list.html", {"devices": devices})
+
+    except Exception as e:
+        print(f"[ERROR] Could not fetch device list: {e}")
+        return render(request, "ui/device_list.html", {"devices": []})
+
+
 
 
 

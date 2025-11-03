@@ -131,11 +131,10 @@
       {% endif %}
     </div>
     <script>
+      const deviceName = "{{ device_name }}";
       async function refreshData() {
         try {
-          const res = await fetch(
-            `/api/latest/{{ device_name }}/temperature/`
-          );
+          const res = await fetch(`/api/latest/${deviceName}/temperature/`);
           const data = await res.json();
           if (!data.value) return;
 

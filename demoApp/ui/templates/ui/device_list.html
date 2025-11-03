@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Device List</title>
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        background: #f4f4f9;
+        color: #333;
+        text-align: center;
+      }
+      h1 {
+        color: #1565c0;
+        margin-bottom: 10px;
+      }
+      .device-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin: 20px auto;
+        width: 60%;
+      }
+      .device-name {
+        font-size: 1.4rem;
+        font-weight: 600;
+      }
+      .device-gateway {
+        color: #777;
+        font-size: 0.9rem;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Device List</h1>
+    {% if devices %} {% for d in devices %}
+    <div class="device-card">
+      <a
+        href="{% url 'device_detail' d.name %}"
+        style="text-decoration: none; color: inherit"
+      >
+        <div class="device-name">{{ d.label }}</div>
+        <div class="device-gateway">Connected to: {{ d.gateway }}</div>
+        <div class="device-path">{{ d.path }}</div>
+      </a>
+    </div>
+    {% endfor %} {% else %}
+    <p>No devices registered.</p>
+    {% endif %}
+  </body>
+</html>
