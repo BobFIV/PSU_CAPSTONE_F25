@@ -28,7 +28,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "campanulaceous-piedad-succinctly.ngrok-free.dev",
+    "noelia-exuberant-anomalously.ngrok-free.dev",
 ]
 
 
