@@ -181,17 +181,17 @@ curl -X POST \
 This subscription pushes new CINs automatically to your Django app’s `/notify` endpoint.
 
 ```bash
-curl -X POST \
-  http://192.168.0.101:8080/cse-mn/SeeedStudioXIAO/temperature \
+curl -X POST \                                                         
+  http://127.0.0.1:8080/cse-in/cbA_id-mn_WeFgxO8cud/aeA_5t9jDiTzH9/cntA_IZNkcs47HG \
   -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: 12345" \
+  -H "X-M2M-RI: 12345" \  
   -H "X-M2M-RVI: 5" \
   -H "Content-Type: application/json;ty=23" \
   -d '{
     "m2m:sub": {
-      "rn": "sub_seeed_temp",
+      "rn": "sub_esp32_temp",   
       "nu": ["http://127.0.0.1:8000/notify/"],
-      "nct": 1,
+      "nct": 1,    
       "enc": { "net": [3] }
     }
   }'
@@ -283,5 +283,5 @@ For setting WiFi network on Pi:
 ```
 sudo nmcli dev wifi list
 
-sudo nmcli --ask dev wifi connect "ssid" password "psswrd" name "home"
+sudo nmcli --ask dev wifi connect "oneM2M_Local" password "Coleisthebest" name "home2"
 ```
