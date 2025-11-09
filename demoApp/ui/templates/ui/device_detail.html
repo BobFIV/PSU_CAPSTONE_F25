@@ -24,6 +24,22 @@
         color: #1565c0;
         margin-bottom: 10px;
       }
+      .back-btn {
+        display: inline-block;
+        margin: 20px 0;
+        padding: 8px 16px;
+        background: #1565c0;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: 0.3s;
+      }
+
+      .back-btn:hover {
+        background: #0d47a1;
+      }
+
 
       .card {
         background: #fff;
@@ -89,6 +105,9 @@
     </style>
   </head>
   <body>
+    <a href="{% url 'device_list' %}" class="back-btn">
+    ← Back to Devices
+    </a>
     <div class="card">
       <div class="icon">
         <i class="fas fa-temperature-high"></i>

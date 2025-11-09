@@ -1,17 +1,21 @@
 import requests
 import json
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import SensorReading
+import uuid
+
 
 # ---------------- CONFIG ----------------
-BASE_URL = "http://192.168.0.102:8080"
+BASE_URL = "http://127.0.0.1:8080/~/id-in/cse-in"
 HEADERS = {
-    "X-M2M-Origin": "CAdmin",
+    "X-M2M-Origin": "CAdmin",    # use this instead of admin:admin
     "X-M2M-RVI": "3",
     "Accept": "application/json",
 }
+
+
 
 # ---------------- BASIC UI VIEWS ----------------
 def login_view(request):
@@ -24,82 +28,62 @@ def home(request):
     return render(request, "ui/home.html")
 
 
-# ---------------- DEVICE LIST ----------------
+# ---------------- DEVICE LISTL ----------------
 def device_list(request):
     """
-    Dynamically fetch all AEAnncs (devices) registered under any gateway,
-    and display their human-readable labels (lbl) when available.
+    Discover all AEs (devices) directly under IN-CSE and display them.
     """
+    devices = []
     try:
-        headers = {**HEADERS, "X-M2M-RI": "reqDeviceList"}
-        response = requests.get(f"{BASE_URL}/cse-in?rcn=6", headers=headers, timeout=5)
-        data = response.json()
+        params = {"fu": "1", "ty": "2"}
+        headers = {**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"}
+        resp = requests.get(
+            "http://127.0.0.1:8080/~/id-in/cse-in",
+            headers=headers,
+            params=params,
+            timeout=5
+        )
 
-        refs = data.get("m2m:rrl", {}).get("rrf", [])
-        devices = []
+        print("[DEBUG] Raw ACME response:", resp.text)
 
-        for item in refs:
-            if item.get("typ") == 10002:  # AEAnnc
-                path = item.get("val", "")
-                ae_name = item.get("nm")
+        if resp.status_code == 200:
+            uris = resp.json().get("m2m:uril", [])
+            for uri in uris:
+                rn = uri.split("/")[-1]
+                if rn in ["CAdmin", "CloudAppAE"]:
+                    continue
 
-                # Extract gateway name from the path (e.g., cbA_id-mn_WeFgxO8cud)
-                path_parts = path.split("/")
-                gateway_name = path_parts[5] if len(path_parts) > 5 else "Unknown"
+                ae_url = f"http://127.0.0.1:8080/~/id-in/{uri}"
+                ae_headers = {**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"}
+                ae_resp = requests.get(ae_url, headers=ae_headers, timeout=3)
 
-                # Clean up path to make a valid REST URL (drop /id-in prefix)
-                clean_path = path.replace("/id-in", "")
+                if ae_resp.status_code == 200:
+                    ae = ae_resp.json().get("m2m:ae", {})
+                    
+                    # 🧹 Clean up labels: remove "device"
+                    labels = [l for l in ae.get("lbl", [rn]) if l.lower() != "device"]
+                    label = ", ".join(labels) if labels else rn
 
-                label = ae_name  # fallback
-                try:
-                    ae_response = requests.get(
-                        f"{BASE_URL}{clean_path}",
-                        headers={**HEADERS, "X-M2M-RI": f"reqFetchAE_{ae_name}"},
-                        timeout=3,
-                    )
-                    ae_data = ae_response.json()
-                    print(ae_data)  # debug to verify structure
-
-                    lbls = (
-                        ae_data.get("m2m:aeA", {}).get("lbl")
-                        or ae_data.get("m2m:aeAnnc", {}).get("lbl")
-                        or []
-                    )
-                    if lbls:
-                        label = ", ".join(lbls)
-
-                except Exception as e:
-                    print(f"⚠️ Could not fetch labels for {ae_name}: {e}")
-
-                devices.append({
-                    "name": ae_name,
-                    "label": label,
-                    "path": path,
-                    "gateway": gateway_name,
-                })
-
-
-        return render(request, "ui/device_list.html", {"devices": devices})
-
+                    devices.append({
+                        "name": rn,
+                        "label": label,   # use cleaned label
+                        "gateway": ae.get("api", "Unknown"),
+                        "path": f"/id-in/{uri}",
+                    })
     except Exception as e:
-        print(f"[ERROR] Could not fetch device list: {e}")
-        return render(request, "ui/device_list.html", {"devices": []})
+        print(f"[ERROR] device_list: {e}")
 
-
-
-
+    return render(request, "ui/device_list.html", {"devices": devices})
 
 # ---------------- DEVICE DETAIL ----------------
 def device_detail(request, device_name):
     """
-    Display the most recent reading stored in the Django DB
-    (populated via /notify).
+    Renders the device detail page with the most recent temperature.
     """
-    # Get most recent temperature reading
     latest_temp = (
         SensorReading.objects
-        .filter(device_name="cbA_id-mn_WeFgxO8cud", sensor_type="temperature")
-        .order_by("-timestamp")
+        .filter(device_name=device_name, sensor_type="temperature")
+        .order_by('-timestamp')
         .first()
     )
 
@@ -107,15 +91,12 @@ def device_detail(request, device_name):
     if latest_temp:
         container_data.append(("temperature", latest_temp.value))
 
-    return render(
-        request,
-        "ui/device_detail.html",
-        {
-            "device_name": "cbA_id-mn_WeFgxO8cud",
-            "container_data": container_data,
-        },
-    )
-    
+    return render(request, "ui/device_detail.html", {
+        "device_name": device_name,
+        "container_data": container_data
+    })
+
+# ---------------- API: LATEST VALUE ----------------
 def latest_value(request, device_name, sensor_type):
     latest = (
         SensorReading.objects
@@ -134,13 +115,10 @@ def latest_value(request, device_name, sensor_type):
     else:
         return JsonResponse({'error': 'No data found'}, status=404)
 
-
-
-# ---------------- HISTORICAL LOGS ----------------
+# ---------------- API: HISTORICAL LOGS ----------------
 def sensor_logs(request, device_name, sensor_type):
     """
-    Returns the last 50 readings stored in your Django DB.
-    These are populated by the /notify subscription endpoint.
+    Return the 50 most recent readings stored in DB (/notify inserts them).
     """
     readings = SensorReading.objects.filter(
         device_name=device_name,
@@ -148,8 +126,8 @@ def sensor_logs(request, device_name, sensor_type):
     ).order_by("-timestamp")[:50]
 
     logs_data = [
-        {"value": reading.value, "timestamp": reading.timestamp.isoformat()}
-        for reading in readings
+        {"value": r.value, "timestamp": r.timestamp.isoformat()}
+        for r in readings
     ]
     return JsonResponse({"logs": logs_data})
 
@@ -158,59 +136,58 @@ def sensor_logs(request, device_name, sensor_type):
 @csrf_exempt
 def notify(request):
     """
-    Subscription endpoint that ACME calls when new CINs are created.
-    It parses the incoming body and stores the reading in your database.
+    Receives notifications from ACME when new CINs are created.
+    Extracts tempC and stores in DB under correct device.
     """
-    if request.method == 'GET':
-        return JsonResponse({'status': 'verification-ok'})
-    if request.method == 'POST':
-        raw_body = request.body.decode("utf-8", errors="ignore")
-        print("\n====================")
-        print("📥 RAW BODY RECEIVED:")
-        print("--------------------")
-        print(raw_body)
-        print("====================\n")
+    if request.method == "GET":
+        return JsonResponse({"status": "ok"})
 
+    if request.method == "POST":
         try:
-            body = json.loads(raw_body)
-            cin = body.get("m2m:sgn", {}).get("nev", {}).get("rep", {}).get("m2m:cinA", {})
-            value = cin.get("con")
-            if value is not None:
-                try:
-                    payload = json.loads(value)
-                    tempC = payload.get("tempC")
+            body = json.loads(request.body.decode("utf-8"))
+            print("\n📥 Notification received:\n", json.dumps(body, indent=2))
 
-                    print(f"🌡️ tempC: {tempC}")
+            cin = body.get("m2m:sgn", {}).get("nev", {}).get("rep", {}).get("m2m:cin", {})
+            value_str = cin.get("con", "{}")
+            pi = cin.get("pi", "")
 
-                    if tempC is not None:
-                        SensorReading.objects.create(
-                            device_name="cbA_id-mn_WeFgxO8cud",
-                            sensor_type="temperature",
-                            value=float(tempC)
-                        )
+            # Map container → device name
+            container_to_device = {
+                "cntaGsbqEvg9o": "SeeedStudioXIAO",
+                "cntRqbXHkN2ee": "ESP32-Gateway",
+            }
 
-                except json.JSONDecodeError:
-                    print(f"⚠️ con was not valid JSON: {value}")
+            device_name = container_to_device.get(pi, "Unknown")
+
+            payload = json.loads(value_str)
+            tempC = payload.get("tempC")
+
+            if tempC is not None and device_name != "Unknown":
+                SensorReading.objects.create(
+                    device_name=device_name,
+                    sensor_type="temperature",
+                    value=float(tempC)
+                )
+                print(f"🌡️ Saved temp {tempC} for {device_name}")
+            else:
+                print(f"⚠️ Unknown device or invalid payload: {pi}")
+
         except Exception as e:
-            print(f"[ERROR] Could not parse or save CIN: {e}")
+            print(f"[ERROR] notify: {e}")
 
     return JsonResponse({"status": "received"})
 
-
+# ---------------- GATEWAY LIST ----------------
 def gateway_list(request):
     """
-    Dynamically fetch all announced gateways (CSEAnncs) from the IN-CSE.
+    Fetch all announced gateways (CSEAnncs) under IN-CSE.
+    Will show only self-announcement if no MN-CSE connected.
     """
+    gateways = []
     try:
-        headers = {
-            **HEADERS,
-            "X-M2M-RI": "reqGatewayList"
-        }
+        resp = requests.get("http://127.0.0.1:8080/~/id-in", headers=HEADERS, params=params, timeout=5)
 
-        response = requests.get(f"{BASE_URL}/cse-in?rcn=6", headers=headers, timeout=5)
-        data = response.json()
-
-        gateways = []
+        data = resp.json()
         refs = data.get("m2m:rrl", {}).get("rrf", [])
 
         for item in refs:
@@ -220,9 +197,7 @@ def gateway_list(request):
                     "path": item.get("val"),
                     "type": "CSEAnnc"
                 })
-
-        return render(request, "ui/gateway_list.html", {"gateways": gateways})
-
     except Exception as e:
-        print(f"[ERROR] Could not fetch gateway list: {e}")
-        return render(request, "ui/gateway_list.html", {"gateways": []})
+        print(f"[ERROR] gateway_list: {e}")
+
+    return render(request, "ui/gateway_list.html", {"gateways": gateways})
