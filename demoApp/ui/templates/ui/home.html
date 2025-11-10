@@ -1,154 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Dashboard Home</title>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
-
-        .header {
-            background-color: #1A73E8;
-            color: white;
-            padding: 60px 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 2.8rem;
-            font-weight: bold;
-        }
-
-        .header p {
-            font-size: 1.4rem;
-            margin-top: 10px;
-        }
-
-        .card-container {
-            display: flex;
-            justify-content: center;
-            align-items: stretch;
-            gap: 40px;
-            flex-wrap: wrap;
-            padding: 50px 20px;
-        }
-
-        .card {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-            flex: 1 1 280px;
-            max-width: 320px;
-            min-height: 320px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 30px 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        }
-
-        .card h3 {
-            text-align: center;
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: #222;
-        }
-
-        .card p {
-            text-align: center;
-            font-size: 1.05rem;
-            color: #555;
-            flex-grow: 1;
-        }
-
-        .card button {
-            background-color: #1A73E8;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 20px;
-        }
-
-        .card button:hover {
-            background-color: #1565C0;
-        }
-
-        .logout-btn {
-            position: fixed;
-            right: 40px;
-            top: 40px;
-            background-color: #e53935;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .logout-btn:hover {
-            background-color: #c62828;
-        }
-
-        @media (max-width: 900px) {
-            .card-container {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .logout-btn {
-                position: static;
-                margin: 20px auto;
-                display: block;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <button class="logout-btn" onclick="window.location.href='/'">Log Out</button>
-
-    <div class="header">
-        <h1>Welcome to the IoT Dashboard</h1>
-        <p>Select a view to continue.</p>
+{% extends "ui/base.html" %}
+{% block title %}Home | IoT Dashboard{% endblock %}
+{% block content %}
+  <div class="card-container" style="display:flex;flex-wrap:wrap;justify-content:center;gap:40px;">
+    <div class="card" style="background:white;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.1);padding:30px;max-width:320px;text-align:center;">
+      <h3>Select a Device</h3>
+      <p>Choose a device from the list and view its sensors and data.</p>
+      <button onclick="window.location.href='/devices/'">Go to Device Selection</button>
     </div>
 
-    <div class="card-container">
-        <div class="card">
-            <h3>Select a Device</h3>
-            <p>Choose a device from the list and view its sensors and data.</p>
-            <button onclick="window.location.href='/devices/'">Go to Device Selection</button>
-        </div>
-
-        <div class="card">
-            <h3>MN-CSE Registrations & Gateway Details</h3>
-            <p>View the different MN-CSEs registered to the IN-CSE along with key gateway information.</p>
-            <button onclick="window.location.href='/gateways/'">View Gateways</button>
-        </div>
-
-        <div class="card">
-            <h3>Analytics</h3>
-            <p>Explore data analytics and insights based on the devices and sensors.</p>
-            <button onclick="window.location.href='/analytics/'">Go to Analytics</button>
-        </div>
+    <div class="card" style="background:white;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.1);padding:30px;max-width:320px;text-align:center;">
+      <h3>MN-CSE Gateways</h3>
+      <p>View the different MN-CSEs registered to the IN-CSE.</p>
+      <button onclick="window.location.href='/gateways/'">View Gateways</button>
     </div>
 
-</body>
-</html>
+    <div class="card" style="background:white;border-radius:12px;box-shadow:0 6px 12px rgba(0,0,0,0.1);padding:30px;max-width:320px;text-align:center;">
+      <h3>Analytics</h3>
+      <p>Explore device and sensor data analytics.</p>
+      <button onclick="window.location.href='/analytics/'">Go to Analytics</button>
+    </div>
+  </div>
+{% endblock %}

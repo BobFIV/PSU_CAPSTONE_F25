@@ -1,0 +1,55 @@
+{% extends "ui/base.html" %}
+{% block title %}Temperature Analytics | IoT Dashboard{% endblock %}
+{% block content %}
+  <h2 style="color:#1565C0;font-weight:700;text-align:center;margin-bottom:30px;">
+    📊 Temperature Analytics
+  </h2>
+
+  {% for device in devices %}
+    <div class="analytics-card">
+      <h3 style="color:#1565C0;margin-bottom:20px;">{{ device }}</h3>
+      <canvas id="chart_{{ forloop.counter }}" height="120"></canvas>
+    </div>
+  {% endfor %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const devices = [...new Set({{ devices|safe }})];
+
+  devices.forEach((device, i) => {
+    const ctx = document.getElementById(`chart_${i+1}`).getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [{
+        label: 'Temperature (°C)',
+        data: [],
+        fill: false,
+        borderColor: '#1A73E8',
+        backgroundColor: '#1A73E8',
+        borderWidth: 2,
+        pointRadius: 4,
+        tension: 0.3
+      }]},
+      options: {
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: false } },
+        plugins: { legend: { display: true } }
+      }
+    });
+
+    async function fetchData() {
+      const res = await fetch(`/api/logs/${device}/temperature/`);
+      const data = await res.json();
+      const logs = data.logs.reverse();
+      chart.data.labels = logs.map(l => new Date(l.timestamp).toLocaleTimeString());
+      chart.data.datasets[0].data = logs.map(l => l.value);
+      chart.update();
+    }
+
+    fetchData();
+    setInterval(fetchData, 5000);
+  });
+</script>
+{% endblock %}

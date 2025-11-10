@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}IoT Dashboard{% endblock %}</title>
+
+  <!-- Shared styling -->
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #1A73E8;
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      font-weight: bold;
+    }
+    nav {
+      background: #1565C0;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      padding: 12px;
+    }
+    /* --- Reusable Card Design --- */
+    .card-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 40px;
+    flex-wrap: wrap;
+    padding: 40px 20px;
+    }
+
+    .analytics-card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    width: 70%;
+    max-width: 650px;      /* smaller than before */
+    margin: 25px auto;
+    padding: 25px 30px;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .analytics-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    .analytics-card canvas {
+    width: 100%;
+    max-height: 260px;     /* keeps charts tight */
+    }
+        .card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    flex: 1 1 280px;
+    max-width: 320px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    text-align: center;
+    }
+
+    .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h3 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 10px;
+    }
+
+    .card p {
+    font-size: 1rem;
+    color: #555;
+    flex-grow: 1;
+    }
+
+    .card button {
+    background-color: #1A73E8;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    }
+
+    .card button:hover {
+    background-color: #1565C0;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    nav a:hover { opacity: 0.7; }
+    .logout-btn {
+      position: fixed;
+      right: 40px;
+      top: 25px;
+      background-color: #e53935;
+      color: white;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .logout-btn:hover { background-color: #c62828; }
+
+    main { padding: 40px 20px; }
+
+    footer {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <header>
+    <h1>IoT Dashboard</h1>
+  </header>
+
+  <nav>
+    <a href="/home/">Home</a>
+    <a href="/devices/">Devices</a>
+    <a href="/gateways/">Gateways</a>
+    <a href="/analytics/">Analytics</a>
+  </nav>
+
+  <button class="logout-btn" onclick="window.location.href='/'">Log Out</button>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    © {{ now|date:"Y" }} IoT Dashboard — All rights reserved
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

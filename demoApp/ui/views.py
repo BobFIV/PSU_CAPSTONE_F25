@@ -1,9 +1,11 @@
 import requests
 import json
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import SensorReading
+from django.db.models import Avg, Max, Min
+from django.utils.timezone import now, timedelta
 import uuid
 
 
@@ -201,3 +203,14 @@ def gateway_list(request):
         print(f"[ERROR] gateway_list: {e}")
 
     return render(request, "ui/gateway_list.html", {"gateways": gateways})
+# ---------------- ANALYTICS ----------------
+def analytics_page(request):
+    allowed_devices = ["SeeedStudioXIAO", "ESP32-Gateway"]
+
+    all_devices = SensorReading.objects.filter(
+        device_name__in=allowed_devices
+    ).values_list('device_name', flat=True)
+
+    devices = sorted(set(all_devices))  # ✅ ensures truly unique
+
+    return render(request, "ui/analytics.html", {"devices": devices})
