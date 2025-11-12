@@ -34,6 +34,7 @@ def home(request):
 def device_list(request):
     """
     Discover all AEs (devices) directly under IN-CSE and display them.
+    Only include AEs that are actual devices (not gateways or orchestrators).
     """
     devices = []
     try:
@@ -52,7 +53,7 @@ def device_list(request):
             uris = resp.json().get("m2m:uril", [])
             for uri in uris:
                 rn = uri.split("/")[-1]
-                if rn in ["CAdmin", "CloudAppAE"]:
+                if rn.lower().startswith("gw-") or rn.lower() in ["orchestrator", "cadmin", "cloudappae"]:
                     continue
 
                 ae_url = f"http://127.0.0.1:8080/~/id-in/{uri}"
@@ -61,21 +62,23 @@ def device_list(request):
 
                 if ae_resp.status_code == 200:
                     ae = ae_resp.json().get("m2m:ae", {})
-                    
-                    # 🧹 Clean up labels: remove "device"
-                    labels = [l for l in ae.get("lbl", [rn]) if l.lower() != "device"]
+
+                    # 🧹 Clean up labels: remove "device" or irrelevant tags
+                    labels = [l for l in ae.get("lbl", [rn]) if l.lower() not in ["device", "gateway", "orchestrator"]]
                     label = ", ".join(labels) if labels else rn
 
                     devices.append({
                         "name": rn,
-                        "label": label,   # use cleaned label
+                        "label": label,
                         "gateway": ae.get("api", "Unknown"),
                         "path": f"/id-in/{uri}",
                     })
+
     except Exception as e:
         print(f"[ERROR] device_list: {e}")
 
     return render(request, "ui/device_list.html", {"devices": devices})
+
 
 # ---------------- DEVICE DETAIL ----------------
 def device_detail(request, device_name):
@@ -155,8 +158,8 @@ def notify(request):
 
             # Map container → device name
             container_to_device = {
-                "cntaGsbqEvg9o": "SeeedStudioXIAO",
-                "cntRqbXHkN2ee": "ESP32-Gateway",
+                "cnt70TrJPVepD": "SeeedStudioXIAO",
+                "cntLiT4HcLXL4": "ESP32-Gateway",
             }
 
             device_name = container_to_device.get(pi, "Unknown")
