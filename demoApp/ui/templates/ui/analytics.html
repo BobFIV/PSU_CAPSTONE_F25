@@ -66,15 +66,15 @@
 {% block content %}
 <div class="page-header">
   <h1 class="page-title"><i class="fas fa-chart-line"></i> Data Analytics</h1>
-  <p class="page-description">Real-time sensor data visualization and trend analysis</p>
+  <p class="page-description">Live sensor data visualization and analysis through time</p>
 </div>
 
 <div class="info-banner">
   <h3><i class="fas fa-info-circle"></i> Analytics Overview</h3>
-  <p>This dashboard displays real-time temperature data from all registered devices. Charts update automatically every 5 seconds with the latest sensor readings retrieved from the IN-CSE.</p>
+  <p>This dashboard displays Live temperature data from all registered devices. Charts update automatically every 5 seconds with the latest sensor readings retrieved from the IN-CSE.</p>
   <p><strong>Data Source:</strong> Content Instances (CINs) stored in the oneM2M resource hierarchy</p>
-  <p><strong>Display:</strong> Shows the most recent 50 readings for each device in chronological order</p>
-  <p><strong>Update Frequency:</strong> Automatic refresh every 5 seconds via subscription notifications</p>
+  <p><strong>Display:</strong> Shows the most recent 50 readings for each device</p>
+  <p><strong>Update Frequency:</strong> Automatic refresh every 5 seconds</p>
 </div>
 
 {% if devices %}
@@ -124,11 +124,11 @@
 
   <div class="info-banner" style="margin-top: 40px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left-color: #4caf50;">
     <h3><i class="fas fa-chart-bar"></i> Understanding the Charts</h3>
-    <p><strong>X-Axis (Time):</strong> Shows the timestamp of each sensor reading in local time format</p>
-    <p><strong>Y-Axis (Temperature):</strong> Displays temperature values in degrees Celsius (°C)</p>
+    <p><strong>X-Axis (Time):</strong> Shows the timestamp of each sensor reading</p>
+    <p><strong>Y-Axis (Temperature):</strong> Displays temperature values in Celsius (°C)</p>
     <p><strong>Data Points:</strong> Each point represents a Content Instance (CIN) created when the device transmitted sensor data</p>
     <p><strong>Trends:</strong> Line graphs help identify temperature patterns, spikes, and environmental changes over time</p>
-    <p><strong>Real-Time Updates:</strong> New data points are automatically added to the chart as devices continue transmitting</p>
+    <p><strong>Real-Time Updates:</strong> New data points are automatically added to the chart</p>
   </div>
 {% else %}
   <div class="empty-state">
@@ -139,12 +139,12 @@
   </div>
 
   <div class="info-banner" style="margin-top: 30px;">
-    <h3><i class="fas fa-question-circle"></i> How to Generate Analytics</h3>
-    <p>1. Ensure at least one device (AE) is registered to the IN-CSE</p>
+    <h3><i class="fas fa-question-circle"></i> How to get Analytics</h3>
+    <p>1. Make sure at least one device (AE) is registered to the IN-CSE</p>
     <p>2. Verify the device is connected via BLE to a gateway (nRF7002 DK)</p>
     <p>3. Confirm the gateway's MN-CSE is creating temperature containers</p>
     <p>4. Check that Content Instances (CINs) are being created with sensor data</p>
-    <p>5. Once data is flowing, return to this page to view analytics</p>
+    <p>5. Once data is flowing return to this page to view analytics</p>
   </div>
 {% endif %}
 

@@ -17,16 +17,16 @@
 
 <div class="info-banner">
   <h3><i class="fas fa-info-circle"></i> Gateway Overview</h3>
-  <p>Gateways function as Middle Node CSEs (MN-CSEs) in the oneM2M hierarchy. Each gateway runs on a Raspberry Pi 5 paired with an nRF7002 Development Kit, serving as an intermediary between low-power sensor devices and the Infrastructure CSE.</p>
+  <p>Gateways function as Middle Node CSEs (MN-CSEs) in the oneM2M hierarchy. Each gateway runs on a Raspberry Pi 5 paired with an nRF7002 Development Kit.</p>
   <p><strong>Gateway Functions:</strong></p>
   <ul>
-    <li>Scan for and establish BLE connections with nearby sensor devices (Seeed XIAO nRF54L15)</li>
+    <li>Scan for BLE connections with nearby sensor devices (Seeed XIAO nRF54L15)</li>
     <li>Collect sensor data transmitted via GATT notifications over BLE</li>
     <li>Forward data to the Raspberry Pi through UART interface</li>
     <li>Run MN-CSE instance that announces resources to the IN-CSE</li>
     <li>Maintain connection state and facilitate handover between gateways</li>
   </ul>
-  <p><strong>Communication:</strong> All gateways operate on the same local network and communicate with the IN-CSE via HTTP RESTful APIs following oneM2M standards.</p>
+  <p><strong>Communication:</strong> All gateways operate on the same local network and communicate with the IN-CSE via APIs following oneM2M standards.</p>
 </div>
 
 {% if gateways %}
@@ -85,15 +85,15 @@
     <p><strong>Current Implementation:</strong> The system uses an intelligent handover mechanism based on RSSI (Received Signal Strength Indicator) values.</p>
     <p><strong>How It Works:</strong></p>
     <ul>
-      <li>Sensor devices periodically send non-connectable BLE advertisements while maintaining active connections</li>
-      <li>All nearby gateways scan for these test advertisements and measure signal strength (RSSI)</li>
-      <li>RSSI data is forwarded to the application layer for analysis</li>
-      <li>The system compares RSSI values across gateways to determine optimal connectivity</li>
-      <li>When signal strength from a different gateway exceeds the current connection, handover is initiated</li>
+      <li>Sensor devices send BLE advertisements while maintaining active connections</li>
+      <li>All nearby gateways scan for these advertisements and measure signal strength (RSSI)</li>
+      <li>RSSI data is forwarded to the application layer</li>
+      <li>The system compares RSSI values across gateways to determine best connectivity</li>
+      <li>When signal strength from a different gateway exceeds the current connection, handover starts</li>
       <li>Device disconnects from current gateway and reconnects to the gateway with stronger signal</li>
-      <li>MAC address tracking ensures data continuity throughout the handover process</li>
+      <li>MAC address tracking makes sure data continuity throughout the handover process</li>
     </ul>
-    <p><strong>Benefits:</strong> This approach minimizes connection interruptions, optimizes signal quality, and ensures seamless data flow as devices move between gateway coverage areas.</p>
+    <p><strong>Benefits:</strong> This approach minimizes connection interruptions, optimizes signal quality, and ensures clean data flow as devices move between gateway coverage areas.</p>
   </div>
 {% else %}
   <div class="empty-state">
@@ -111,7 +111,7 @@
       <li>2. Connect nRF7002 DK to Raspberry Pi via UART-over-USB</li>
       <li>3. Ensure both devices are connected to the same local network as the IN-CSE</li>
       <li>4. Configure MN-CSE with parent CSE URL pointing to IN-CSE's local IP</li>
-      <li>5. Start MN-CSE service - registration will occur automatically</li>
+      <li>5. Start MN-CSE service, registration will occur automatically</li>
       <li>6. Gateway will appear in this dashboard once successfully registered</li>
     </ul>
   </div>
@@ -123,12 +123,12 @@
   <ul>
     <li><strong>Raspberry Pi 5:</strong> Hosts MN-CSE instance, manages oneM2M communication, processes sensor data</li>
     <li><strong>Nordic nRF7002 DK:</strong> Handles BLE scanning, connection management, and GATT client operations</li>
-    <li><strong>UART Interface:</strong> Connects nRF7002 DK to Raspberry Pi for bidirectional data transfer</li>
+    <li><strong>UART Interface:</strong> Connects nRF7002 DK to Raspberry Pi for back and forth data transfer</li>
   </ul>
   <p><strong>Software Stack:</strong></p>
   <ul>
-    <li><strong>ACME-CSE:</strong> Python-based oneM2M middleware running as MN-CSE</li>
-    <li><strong>Zephyr RTOS:</strong> Real-time operating system on nRF7002 DK for BLE management</li>
+    <li><strong>ACME-CSE:</strong> oneM2M middleware running as MN-CSE</li>
+    <li><strong>Zephyr RTOS:</strong> Live operating system on nRF7002 DK for BLE management</li>
     <li><strong>Custom Firmware:</strong> Connection management, whitelist filtering, RSSI monitoring</li>
   </ul>
 </div>
