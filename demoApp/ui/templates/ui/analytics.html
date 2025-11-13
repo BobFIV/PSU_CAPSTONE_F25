@@ -1,51 +1,277 @@
 {% extends "ui/base.html" %}
-{% block title %}Temperature Analytics | IoT Dashboard{% endblock %}
+{% block title %}Analytics | IoT Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/home/"><i class="fas fa-home"></i> Home</a>
+  <span class="breadcrumb-separator">›</span>
+  <span>Analytics</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+
+  .chart-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1A73E8;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+
+  .chart-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #5a6c7d;
+  }
+
+  .chart-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #f8f9fa;
+    border-radius: 20px;
+  }
+
+  canvas {
+    max-height: 350px !important;
+  }
+
+  .no-data-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #5a6c7d;
+  }
+
+  .no-data-icon {
+    font-size: 3rem;
+    color: #bdc3c7;
+    margin-bottom: 15px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-  <h2 style="color:#1565C0;font-weight:700;text-align:center;margin-bottom:30px;">
-    📊 Temperature Analytics
-  </h2>
+<div class="page-header">
+  <h1 class="page-title"><i class="fas fa-chart-line"></i> Data Analytics</h1>
+  <p class="page-description">Real-time sensor data visualization and trend analysis</p>
+</div>
+
+<div class="info-banner">
+  <h3><i class="fas fa-info-circle"></i> Analytics Overview</h3>
+  <p>This dashboard displays real-time temperature data from all registered devices. Charts update automatically every 5 seconds with the latest sensor readings retrieved from the IN-CSE.</p>
+  <p><strong>Data Source:</strong> Content Instances (CINs) stored in the oneM2M resource hierarchy</p>
+  <p><strong>Display:</strong> Shows the most recent 50 readings for each device in chronological order</p>
+  <p><strong>Update Frequency:</strong> Automatic refresh every 5 seconds via subscription notifications</p>
+</div>
+
+{% if devices %}
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">{{ devices|length }}</div>
+      <div class="stat-label">Active Sensors</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><i class="fas fa-thermometer-half" style="color: #ff9800;"></i></div>
+      <div class="stat-label">Temperature Monitoring</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">5s</div>
+      <div class="stat-label">Refresh Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">50</div>
+      <div class="stat-label">Data Points Per Chart</div>
+    </div>
+  </div>
 
   {% for device in devices %}
     <div class="analytics-card">
-      <h3 style="color:#1565C0;margin-bottom:20px;">{{ device }}</h3>
+      <div class="chart-header">
+        <div class="chart-title">
+          <i class="fas fa-microchip"></i>
+          {{ device }}
+        </div>
+        <div class="chart-meta">
+          <div class="chart-meta-item">
+            <i class="fas fa-thermometer-half" style="color: #ff9800;"></i>
+            Temperature (°C)
+          </div>
+          <div class="chart-meta-item">
+            <i class="fas fa-sync-alt" style="color: #4caf50;"></i>
+            Live Updates
+          </div>
+        </div>
+      </div>
       <canvas id="chart_{{ forloop.counter }}" height="120"></canvas>
+      <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: #5a6c7d;">
+        <i class="fas fa-clock"></i> Last updated: <span id="lastUpdate_{{ forloop.counter }}">Loading...</span>
+      </div>
     </div>
   {% endfor %}
+
+  <div class="info-banner" style="margin-top: 40px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left-color: #4caf50;">
+    <h3><i class="fas fa-chart-bar"></i> Understanding the Charts</h3>
+    <p><strong>X-Axis (Time):</strong> Shows the timestamp of each sensor reading in local time format</p>
+    <p><strong>Y-Axis (Temperature):</strong> Displays temperature values in degrees Celsius (°C)</p>
+    <p><strong>Data Points:</strong> Each point represents a Content Instance (CIN) created when the device transmitted sensor data</p>
+    <p><strong>Trends:</strong> Line graphs help identify temperature patterns, spikes, and environmental changes over time</p>
+    <p><strong>Real-Time Updates:</strong> New data points are automatically added to the chart as devices continue transmitting</p>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="fas fa-chart-line"></i></div>
+    <h3>No Analytics Data Available</h3>
+    <p>No devices with temperature sensors are currently registered.</p>
+    <p>Charts will appear here once devices begin transmitting sensor data through the gateway network.</p>
+  </div>
+
+  <div class="info-banner" style="margin-top: 30px;">
+    <h3><i class="fas fa-question-circle"></i> How to Generate Analytics</h3>
+    <p>1. Ensure at least one device (AE) is registered to the IN-CSE</p>
+    <p>2. Verify the device is connected via BLE to a gateway (nRF7002 DK)</p>
+    <p>3. Confirm the gateway's MN-CSE is creating temperature containers</p>
+    <p>4. Check that Content Instances (CINs) are being created with sensor data</p>
+    <p>5. Once data is flowing, return to this page to view analytics</p>
+  </div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const devices = [...new Set({{ devices|safe }})];
+  const deviceNames = JSON.parse('{{ devices|escapejs }}');
 
-  devices.forEach((device, i) => {
-    const ctx = document.getElementById(`chart_${i+1}`).getContext('2d');
+  deviceNames.forEach((device, i) => {
+    const chartIndex = i + 1;
+    const ctx = document.getElementById(`chart_${chartIndex}`).getContext('2d');
+    
     const chart = new Chart(ctx, {
       type: 'line',
-      data: { labels: [], datasets: [{
-        label: 'Temperature (°C)',
-        data: [],
-        fill: false,
-        borderColor: '#1A73E8',
-        backgroundColor: '#1A73E8',
-        borderWidth: 2,
-        pointRadius: 4,
-        tension: 0.3
-      }]},
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Temperature (°C)',
+          data: [],
+          fill: true,
+          backgroundColor: 'rgba(26, 115, 232, 0.1)',
+          borderColor: '#1A73E8',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#1A73E8',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          tension: 0.4
+        }]
+      },
       options: {
+        responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { beginAtZero: false } },
-        plugins: { legend: { display: true } }
+        interaction: {
+          intersect: false,
+          mode: 'index'
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 15,
+              font: { size: 12 }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: { size: 13 },
+            bodyFont: { size: 12 },
+            callbacks: {
+              label: function(context) {
+                return `Temperature: ${context.parsed.y.toFixed(2)}°C`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            ticks: {
+              callback: function(value) {
+                return value + '°C';
+              },
+              font: { size: 11 }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          },
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              font: { size: 10 }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          }
+        }
       }
     });
 
     async function fetchData() {
-      const res = await fetch(`/api/logs/${device}/temperature/`);
-      const data = await res.json();
-      const logs = data.logs.reverse();
-      chart.data.labels = logs.map(l => new Date(l.timestamp).toLocaleTimeString());
-      chart.data.datasets[0].data = logs.map(l => l.value);
-      chart.update();
+      try {
+        const res = await fetch(`/api/logs/${device}/temperature/`);
+        const data = await res.json();
+        
+        if (!data.logs || data.logs.length === 0) {
+          console.log(`No data available for ${device}`);
+          return;
+        }
+
+        const logs = data.logs.reverse();
+        
+        chart.data.labels = logs.map(l => {
+          const date = new Date(l.timestamp);
+          return date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+          });
+        });
+        
+        chart.data.datasets[0].data = logs.map(l => l.value);
+        chart.update('none');
+
+        const lastUpdateEl = document.getElementById(`lastUpdate_${chartIndex}`);
+        if (lastUpdateEl && logs.length > 0) {
+          const latestTime = new Date(logs[logs.length - 1].timestamp);
+          lastUpdateEl.textContent = latestTime.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+        }
+
+      } catch (err) {
+        console.error(`Failed to fetch data for ${device}:`, err);
+      }
     }
 
     fetchData();

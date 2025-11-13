@@ -1,95 +1,235 @@
-<!-- ui/templates/ui/login.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - IoT Dashboard</title>
+    <title>Login - IoT Handover Framework</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #1E3C72 0%, #2A5298 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1A73E8 0%, #1557b0 100%);
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            position: relative;
+            overflow: hidden;
         }
-        .login-container {
-            background-color: white;
-            padding: 40px;
+
+        body::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            top: -200px;
+            right: -200px;
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
             width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+            bottom: -150px;
+            left: -150px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 50px 45px;
+            width: 450px;
             max-width: 100%;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
-            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
         }
-        .login-container h1 {
-            font-size: 2.5rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        .login-container p {
-            color: #555;
+
+        .logo-container {
             margin-bottom: 30px;
-            font-size: 1.2rem;
         }
+
+        .logo-icon {
+            font-size: 4rem;
+            color: #1A73E8;
+            margin-bottom: 15px;
+        }
+
+        .login-container h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            font-size: 1rem;
+            color: #5a6c7d;
+            margin-bottom: 35px;
+            line-height: 1.6;
+        }
+
+        .project-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .project-info h3 {
+            color: #1A73E8;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-info p {
+            color: #37474f;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .project-info p:last-child {
+            margin-bottom: 0;
+        }
+
         .login-button {
             width: 100%;
-            padding: 15px;
-            background-color: #1A73E8;
+            padding: 16px;
+            background: linear-gradient(135deg, #1A73E8 0%, #1557b0 100%);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
+
         .login-button:hover {
-            background-color: #1565C0;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.4);
         }
-        .login-button:focus {
-            outline: none;
+
+        .login-button:active {
+            transform: translateY(0);
         }
-        .login-footer {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: #777;
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 25px;
+            text-align: left;
         }
-        .login-footer a {
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #5a6c7d;
+            font-size: 0.85rem;
+        }
+
+        .feature-icon {
             color: #1A73E8;
-            text-decoration: none;
+            font-size: 1.2rem;
         }
-        .login-footer a:hover {
-            text-decoration: underline;
+
+        .footer-note {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #95a5a6;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 500px) {
+            .login-container {
+                padding: 35px 25px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="login-container">
-        <h1>Welcome Back</h1>
-        <p>To access the IoT Dashboard, please log in.</p>
-        <!-- Use the Django template tag in a data attribute -->
-        <button class="login-button" id="login-button">Log In</button>
-        <div class="login-footer">
-            <p>Don't have an account? <a href="#">Sign Up</a></p>
+        <div class="logo-container">
+            <div class="logo-icon"><i class="fas fa-network-wired"></i></div>
+            <h1>IoT Handover Framework</h1>
+            <p class="login-subtitle">oneM2M-Based Device Management System</p>
+        </div>
+
+        <div class="project-info">
+            <h3><i class="fas fa-info-circle"></i> System Overview</h3>
+            <p><strong>Penn State Capstone Project (Fall 2025)</strong></p>
+            <p>A seamless handover architecture for IoT devices using oneM2M standards. This dashboard provides real-time monitoring of sensor endpoints, gateway networks, and environmental data.</p>
+        </div>
+
+        <button class="login-button" id="login-button">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Access Dashboard</span>
+        </button>
+
+        <div class="features">
+            <div class="feature-item">
+                <i class="fas fa-chart-line feature-icon"></i>
+                <span>Real-Time Analytics</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-server feature-icon"></i>
+                <span>Gateway Monitoring</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-microchip feature-icon"></i>
+                <span>Device Management</span>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-shield-alt feature-icon"></i>
+                <span>oneM2M Compliant</span>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            Sponsored by <strong>Exacta Global Smart Solutions</strong><br>
+            Team: Cole Nelson, David Johnson, Donald Jeter Boswell,<br>
+            Ethan Liu, Eric Shin, Steven Bowman, Khairol Eimannajwan
         </div>
     </div>
 
     <script>
-        // Add event listener to login button
         document.getElementById('login-button').addEventListener('click', function() {
-            // Use window.location.href to redirect to the home page
             window.location.href = "{% url 'home' %}";
+        });
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.location.href = "{% url 'home' %}";
+            }
         });
     </script>
 
