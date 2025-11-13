@@ -1,39 +1,136 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Gateways</title>
-  <style>
-    body {
-      font-family: 'Roboto', sans-serif;
-      background: #f4f4f9;
-      color: #333;
-      text-align: center;
-    }
-    h1 { color: #1565C0; margin-bottom: 20px; }
-    .gateway-card {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      padding: 20px;
-      margin: 20px auto;
-      width: 60%;
-    }
-    .gateway-name { font-size: 1.4rem; font-weight: 600; }
-    .gateway-path { color: #666; font-size: 0.9rem; margin-top: 5px; }
-  </style>
-</head>
-<body>
-  <h1>Registered Gateways</h1>
-  {% if gateways %}
+{% extends "ui/base.html" %}
+{% block title %}Gateways | IoT Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/home/"><i class="fas fa-home"></i> Home</a>
+  <span class="breadcrumb-separator">›</span>
+  <span>Gateways</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title"><i class="fas fa-server"></i> MN-CSE Gateway Network</h1>
+  <p class="page-description">Middle Node Common Service Entities managing device connections</p>
+</div>
+
+<div class="info-banner">
+  <h3><i class="fas fa-info-circle"></i> Gateway Overview</h3>
+  <p>Gateways function as Middle Node CSEs (MN-CSEs) in the oneM2M hierarchy. Each gateway runs on a Raspberry Pi 5 paired with an nRF7002 Development Kit.</p>
+  <p><strong>Gateway Functions:</strong></p>
+  <ul>
+    <li>Scan for BLE connections with nearby sensor devices (Seeed XIAO nRF54L15)</li>
+    <li>Collect sensor data transmitted via GATT notifications over BLE</li>
+    <li>Forward data to the Raspberry Pi through UART interface</li>
+    <li>Run MN-CSE instance that announces resources to the IN-CSE</li>
+    <li>Maintain connection state and facilitate handover between gateways</li>
+  </ul>
+  <p><strong>Communication:</strong> All gateways operate on the same local network and communicate with the IN-CSE via APIs following oneM2M standards.</p>
+</div>
+
+{% if gateways %}
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-value">{{ gateways|length }}</div>
+      <div class="stat-label">Active Gateways</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><i class="fas fa-network-wired" style="color: #1A73E8;"></i></div>
+      <div class="stat-label">MN-CSE Nodes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><i class="fas fa-sync-alt" style="color: #4caf50;"></i></div>
+      <div class="stat-label">Synchronized</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value"><i class="fas fa-bluetooth" style="color: #2196f3;"></i></div>
+      <div class="stat-label">BLE Enabled</div>
+    </div>
+  </div>
+
+  <div class="card-container" style="margin-top: 40px;">
     {% for g in gateways %}
-      <div class="gateway-card">
-        <div class="gateway-name">{{ g.name }}</div>
-        <div class="gateway-path">{{ g.path }}</div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+          <div class="card-icon" style="margin: 0;"><i class="fas fa-server"></i></div>
+          <span class="badge badge-online">
+            <i class="fas fa-circle" style="font-size: 0.6rem;"></i> Active
+          </span>
+        </div>
+        
+        <h3>{{ g.name }}</h3>
+        
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; flex-grow: 1;">
+          <p style="margin: 0; color: #2c3e50; font-size: 0.9rem;">
+            <strong><i class="fas fa-route"></i> Resource Path:</strong><br>
+            <span style="color: #5a6c7d; font-family: monospace; font-size: 0.85rem; word-break: break-all;">{{ g.path }}</span>
+          </p>
+          <p style="margin: 10px 0 0; color: #2c3e50; font-size: 0.9rem;">
+            <strong><i class="fas fa-tag"></i> Type:</strong> 
+            <span style="color: #5a6c7d;">{{ g.type }}</span>
+          </p>
+        </div>
+        
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: center; padding: 12px; background: #e3f2fd; border-radius: 8px; margin-top: auto;">
+          <i class="fas fa-info-circle" style="color: #1A73E8;"></i>
+          <span style="font-size: 0.9rem; color: #1565C0; font-weight: 500;">Registered to IN-CSE</span>
+        </div>
       </div>
     {% endfor %}
-  {% else %}
-    <p>No gateways found.</p>
-  {% endif %}
-</body>
-</html>
+  </div>
+
+  <div class="info-banner" style="margin-top: 50px; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left-color: #4caf50;">
+    <h3><i class="fas fa-exchange-alt"></i> Handover Mechanism</h3>
+    <p><strong>Current Implementation:</strong> The system uses an intelligent handover mechanism based on RSSI (Received Signal Strength Indicator) values.</p>
+    <p><strong>How It Works:</strong></p>
+    <ul>
+      <li>Sensor devices send BLE advertisements while maintaining active connections</li>
+      <li>All nearby gateways scan for these advertisements and measure signal strength (RSSI)</li>
+      <li>RSSI data is forwarded to the application layer</li>
+      <li>The system compares RSSI values across gateways to determine best connectivity</li>
+      <li>When signal strength from a different gateway exceeds the current connection, handover starts</li>
+      <li>Device disconnects from current gateway and reconnects to the gateway with stronger signal</li>
+      <li>MAC address tracking makes sure data continuity throughout the handover process</li>
+    </ul>
+    <p><strong>Benefits:</strong> This approach minimizes connection interruptions, optimizes signal quality, and ensures clean data flow as devices move between gateway coverage areas.</p>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="fas fa-server"></i></div>
+    <h3>No Gateways Registered</h3>
+    <p>No MN-CSE gateways are currently connected to the IN-CSE.</p>
+    <p>Gateways will appear here once they register and announce their presence to the Infrastructure CSE.</p>
+  </div>
+
+  <div class="info-banner" style="margin-top: 30px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left-color: #f57c00;">
+    <h3><i class="fas fa-cogs"></i> Gateway Setup Instructions</h3>
+    <p><strong>To register a new gateway:</strong></p>
+    <ul>
+      <li>1. Configure Raspberry Pi 5 with ACME-CSE software in MN-CSE mode</li>
+      <li>2. Connect nRF7002 DK to Raspberry Pi via UART-over-USB</li>
+      <li>3. Ensure both devices are connected to the same local network as the IN-CSE</li>
+      <li>4. Configure MN-CSE with parent CSE URL pointing to IN-CSE's local IP</li>
+      <li>5. Start MN-CSE service, registration will occur automatically</li>
+      <li>6. Gateway will appear in this dashboard once successfully registered</li>
+    </ul>
+  </div>
+{% endif %}
+
+<div class="info-banner" style="margin-top: 40px;">
+  <h3><i class="fas fa-layer-group"></i> Gateway Architecture</h3>
+  <p><strong>Hardware Components:</strong></p>
+  <ul>
+    <li><strong>Raspberry Pi 5:</strong> Hosts MN-CSE instance, manages oneM2M communication, processes sensor data</li>
+    <li><strong>Nordic nRF7002 DK:</strong> Handles BLE scanning, connection management, and GATT client operations</li>
+    <li><strong>UART Interface:</strong> Connects nRF7002 DK to Raspberry Pi for back and forth data transfer</li>
+  </ul>
+  <p><strong>Software Stack:</strong></p>
+  <ul>
+    <li><strong>ACME-CSE:</strong> oneM2M middleware running as MN-CSE</li>
+    <li><strong>Zephyr RTOS:</strong> Live operating system on nRF7002 DK for BLE management</li>
+    <li><strong>Custom Firmware:</strong> Connection management, whitelist filtering, RSSI monitoring</li>
+  </ul>
+</div>
+
+{% endblock %}

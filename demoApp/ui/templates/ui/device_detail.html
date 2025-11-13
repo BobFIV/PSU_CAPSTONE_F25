@@ -1,181 +1,279 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ device_name }} - Temperature</title>
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        font-family: "Roboto", sans-serif;
-        background: #f4f4f9;
-        color: #333;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-      }
+{% extends "ui/base.html" %}
+{% load custom_filters %}
+{% block title %}{{ device_name }} | Device Details{% endblock %}
 
-      h1 {
-        color: #1565c0;
-        margin-bottom: 10px;
-      }
-      .back-btn {
-        display: inline-block;
-        margin: 20px 0;
-        padding: 8px 16px;
-        background: #1565c0;
-        color: white;
-        border-radius: 8px;
-        text-decoration: none;
-        font-weight: 500;
-        transition: 0.3s;
-      }
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <a href="/home/"><i class="fas fa-home"></i> Home</a>
+  <span class="breadcrumb-separator">›</span>
+  <a href="/devices/">Devices</a>
+  <span class="breadcrumb-separator">›</span>
+  <span>{{ device_name }}</span>
+</div>
+{% endblock %}
 
-      .back-btn:hover {
-        background: #0d47a1;
-      }
+{% block extra_head %}
+<style>
+  .device-header {
+    background: linear-gradient(135deg, #1A73E8 0%, #1557b0 100%);
+    color: white;
+    padding: 40px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
 
+  .device-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
 
-      .card {
-        background: #fff;
-        padding: 40px 60px;
-        border-radius: 16px;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        text-align: center;
-        transition: 0.3s;
-      }
+  .device-header-icon {
+    font-size: 3rem;
+    opacity: 0.9;
+  }
 
-      .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      }
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+  }
 
-      .icon {
-        font-size: 3rem;
-        color: #ff9800;
-        margin-bottom: 10px;
-      }
+  .sensor-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.06);
+    text-align: center;
+    transition: all 0.3s ease;
+  }
 
-      .temperature {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #333;
-      }
+  .sensor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  }
 
-      .sub {
-        font-size: 1rem;
-        color: #777;
-        margin-top: 8px;
-      }
+  .sensor-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
 
-      .status {
-        margin-top: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        padding: 6px 14px;
-        border-radius: 20px;
-        display: inline-block;
-      }
+  .sensor-icon.temperature { color: #ff9800; }
+  .sensor-icon.humidity { color: #2196f3; }
+  .sensor-icon.pressure { color: #9c27b0; }
+  .sensor-icon.battery { color: #4caf50; }
+  .sensor-icon.signal { color: #f44336; }
 
-      .status.good {
-        background: #e8f5e9;
-        color: #2e7d32;
-      }
+  .sensor-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 10px 0;
+  }
 
-      .status.warning {
-        background: #fff3e0;
-        color: #e65100;
-      }
+  .sensor-label {
+    font-size: 1.1rem;
+    color: #5a6c7d;
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
 
-      .status.critical {
-        background: #ffebee;
-        color: #c62828;
-      }
+  .sensor-subtitle {
+    font-size: 0.9rem;
+    color: #95a5a6;
+    margin-top: 10px;
+  }
 
-      .footer {
-        margin-top: 20px;
-        font-size: 0.9rem;
-        color: #999;
-      }
-    </style>
-  </head>
-  <body>
-    <a href="{% url 'device_list' %}" class="back-btn">
-    ← Back to Devices
-    </a>
-    <div class="card">
-      <div class="icon">
-        <i class="fas fa-temperature-high"></i>
+  .status-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .status-optimal { background: #e8f5e9; color: #2e7d32; }
+  .status-warning { background: #fff3e0; color: #e65100; }
+  .status-critical { background: #ffebee; color: #c62828; }
+
+  .detail-info {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.06);
+    margin-top: 30px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #ecf0f1;
+  }
+
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    color: #5a6c7d;
+  }
+
+  .detail-value {
+    color: #2c3e50;
+    font-family: monospace;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="device-header">
+  <h1>
+    <i class="fas fa-microchip device-header-icon"></i>
+    {{ device_name }}
+  </h1>
+  <p style="opacity: 0.9; font-size: 1.1rem;">Live sensor monitoring and environmental data</p>
+  <div style="margin-top: 15px;">
+    <span class="badge badge-online">
+      <i class="fas fa-circle" style="font-size: 0.6rem;"></i> Connected
+    </span>
+    <span class="badge" style="background: rgba(255,255,255,0.2); color: white; margin-left: 10px;">
+      <i class="fas fa-sync-alt"></i> Updates Every 5s
+    </span>
+  </div>
+</div>
+
+<div class="info-banner">
+  <h3><i class="fas fa-broadcast-tower"></i> Device Information</h3>
+  <p>This device is an Application Entity (AE) registered in the oneM2M framework. Sensor data is collected via BLE and transmitted through the gateway network to this dashboard.</p>
+  <p><strong>Data Source:</strong> Latest Content Instance (CIN) from IN-CSE resource tree</p>
+</div>
+
+{% if container_data %}
+  <div class="sensor-grid">
+    {% for container, data in container_data %}
+      <div class="sensor-card">
+        <div class="sensor-icon temperature">
+          <i class="fas fa-temperature-high"></i>
+        </div>
+        <div class="sensor-label">Temperature</div>
+        <div class="sensor-value" id="tempC">{{ data }}°C</div>
+        <div class="sensor-subtitle" id="tempF"></div>
+        <div class="status-badge" id="tempStatus"></div>
       </div>
-      <h1>{{ device_name }}</h1>
+    {% endfor %}
+  </div>
 
-      {% if container_data %} {% for container, data in container_data %}
-      <div class="temperature">{{ data }}°C</div>
-      <div class="sub" id="tempF"></div>
-      <div class="status" id="tempStatus"></div>
+  <script>
+    (function () {
+      const tempC = parseFloat("{{ container_data.0.1 }}");
+      const tempF = (tempC * 9) / 5 + 32;
+      
+      document.getElementById("tempF").textContent = tempF.toFixed(1) + "°F";
 
-      <script>
-        (function () {
-          const tempC = parseFloat("{{ data }}");
-          const tempF = (tempC * 9) / 5 + 32;
-          document.getElementById("tempF").textContent =
-            tempC.toFixed(1) + "°C = " + tempF.toFixed(1) + "°F";
-
-          const statusEl = document.getElementById("tempStatus");
-          if (tempC >= 20 && tempC <= 25) {
-            statusEl.className = "status good";
-            statusEl.textContent = "Optimal";
-          } else if (tempC > 25 && tempC <= 28) {
-            statusEl.className = "status warning";
-            statusEl.textContent = "Warm";
-          } else if (tempC > 28) {
-            statusEl.className = "status critical";
-            statusEl.textContent = "Hot";
-          } else if (tempC >= 18) {
-            statusEl.className = "status warning";
-            statusEl.textContent = "Cool";
-          } else {
-            statusEl.className = "status critical";
-            statusEl.textContent = "Cold";
-          }
-        })();
-      </script>
-      {% endfor %} {% else %}
-      <p>No temperature data available.</p>
-      {% endif %}
-    </div>
-    <script>
-      const deviceName = "{{ device_name }}";
-      async function refreshData() {
-        try {
-          const res = await fetch(`/api/latest/${deviceName}/temperature/`);
-          const data = await res.json();
-          if (!data.value) return;
-
-          const tempC = parseFloat(data.value);
-          const tempF = (tempC * 9) / 5 + 32;
-
-          document.querySelector(".temperature").textContent = `${tempC.toFixed(
-            1
-          )}°C`;
-          document.getElementById("tempF").textContent = `${tempC.toFixed(
-            1
-          )}°C = ${tempF.toFixed(1)}°F`;
-          console.log(`Updated live value: ${tempC}°C`);
-        } catch (err) {
-          console.error("Update failed:", err);
-        }
+      const statusEl = document.getElementById("tempStatus");
+      if (tempC >= 20 && tempC <= 25) {
+        statusEl.className = "status-badge status-optimal";
+        statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Optimal';
+      } else if (tempC > 25 && tempC <= 28) {
+        statusEl.className = "status-badge status-warning";
+        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Warm';
+      } else if (tempC > 28) {
+        statusEl.className = "status-badge status-critical";
+        statusEl.innerHTML = '<i class="fas fa-fire"></i> Hot';
+      } else if (tempC >= 18) {
+        statusEl.className = "status-badge status-warning";
+        statusEl.innerHTML = '<i class="fas fa-snowflake"></i> Cool';
+      } else {
+        statusEl.className = "status-badge status-critical";
+        statusEl.innerHTML = '<i class="fas fa-icicles"></i> Cold';
       }
+    })();
+  </script>
 
-      setInterval(refreshData, 5000);
-      refreshData();
-    </script>
+  <div class="detail-info">
+    <h3 style="color: #1A73E8; margin-bottom: 20px;"><i class="fas fa-info-circle"></i> Connection Details</h3>
+    <div class="detail-row">
+      <span class="detail-label"><i class="fas fa-tag"></i> Device Name</span>
+      <span class="detail-value">{{ device_name }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label"><i class="fas fa-database"></i> Data Source</span>
+      <span class="detail-value">IN-CSE Latest CIN</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label"><i class="fas fa-clock"></i> Update Frequency</span>
+      <span class="detail-value">Every 5 seconds</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label"><i class="fas fa-check-circle"></i> Connection Status</span>
+      <span class="detail-value" style="color: #4caf50; font-weight: bold;">● Active</span>
+    </div>
+  </div>
 
-    <div class="footer">Last updated from IN-CSE (latest content instance)</div>
-  </body>
-</html>
+  <script>
+    const deviceName = "{{ device_name }}";
+    
+    async function refreshData() {
+      try {
+        const res = await fetch(`/api/latest/${deviceName}/temperature/`);
+        const data = await res.json();
+        if (!data.value) return;
+
+        const tempC = parseFloat(data.value);
+        const tempF = (tempC * 9) / 5 + 32;
+
+        document.getElementById("tempC").textContent = `${tempC.toFixed(1)}°C`;
+        document.getElementById("tempF").textContent = `${tempF.toFixed(1)}°F`;
+
+        const statusEl = document.getElementById("tempStatus");
+        if (tempC >= 20 && tempC <= 25) {
+          statusEl.className = "status-badge status-optimal";
+          statusEl.innerHTML = '<i class="fas fa-check-circle"></i> Optimal';
+        } else if (tempC > 25 && tempC <= 28) {
+          statusEl.className = "status-badge status-warning";
+          statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Warm';
+        } else if (tempC > 28) {
+          statusEl.className = "status-badge status-critical";
+          statusEl.innerHTML = '<i class="fas fa-fire"></i> Hot';
+        } else if (tempC >= 18) {
+          statusEl.className = "status-badge status-warning";
+          statusEl.innerHTML = '<i class="fas fa-snowflake"></i> Cool';
+        } else {
+          statusEl.className = "status-badge status-critical";
+          statusEl.innerHTML = '<i class="fas fa-icicles"></i> Cold';
+        }
+
+        console.log(`[${new Date().toLocaleTimeString()}] Updated: ${tempC}°C`);
+      } catch (err) {
+        console.error("Update failed:", err);
+      }
+    }
+
+    setInterval(refreshData, 5000);
+    refreshData();
+  </script>
+{% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div>
+    <h3>No Data Available</h3>
+    <p>This device has not transmitted any sensor data yet.</p>
+    <p>Data will appear here once the device begins sending readings through its connected gateway.</p>
+  </div>
+{% endif %}
+
+<div style="text-align: center; margin-top: 40px;">
+  <button class="btn btn-secondary" onclick="window.location.href='/devices/'">
+    <i class="fas fa-arrow-left"></i> Back to Devices
+  </button>
+</div>
+
+{% endblock %}

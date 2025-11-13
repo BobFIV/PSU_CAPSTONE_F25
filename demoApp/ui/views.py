@@ -9,17 +9,14 @@ from django.utils.timezone import now, timedelta
 import uuid
 
 
-# ---------------- CONFIG ----------------
 BASE_URL = "http://127.0.0.1:8080/~/id-in/cse-in"
 HEADERS = {
-    "X-M2M-Origin": "CAdmin",    # use this instead of admin:admin
+    "X-M2M-Origin": "CAdmin",
     "X-M2M-RVI": "3",
     "Accept": "application/json",
 }
 
 
-
-# ---------------- BASIC UI VIEWS ----------------
 def login_view(request):
     return render(request, "ui/login.html")
 
@@ -30,7 +27,6 @@ def home(request):
     return render(request, "ui/home.html")
 
 
-# ---------------- DEVICE LISTL ----------------
 def device_list(request):
     """
     Discover all AEs (devices) directly under IN-CSE and display them.
@@ -62,13 +58,12 @@ def device_list(request):
                 if ae_resp.status_code == 200:
                     ae = ae_resp.json().get("m2m:ae", {})
                     
-                    # 🧹 Clean up labels: remove "device"
                     labels = [l for l in ae.get("lbl", [rn]) if l.lower() != "device"]
                     label = ", ".join(labels) if labels else rn
 
                     devices.append({
                         "name": rn,
-                        "label": label,   # use cleaned label
+                        "label": label,
                         "gateway": ae.get("api", "Unknown"),
                         "path": f"/id-in/{uri}",
                     })
@@ -77,7 +72,7 @@ def device_list(request):
 
     return render(request, "ui/device_list.html", {"devices": devices})
 
-# ---------------- DEVICE DETAIL ----------------
+
 def device_detail(request, device_name):
     """
     Renders the device detail page with the most recent temperature.
@@ -98,7 +93,7 @@ def device_detail(request, device_name):
         "container_data": container_data
     })
 
-# ---------------- API: LATEST VALUE ----------------
+
 def latest_value(request, device_name, sensor_type):
     latest = (
         SensorReading.objects
@@ -117,7 +112,7 @@ def latest_value(request, device_name, sensor_type):
     else:
         return JsonResponse({'error': 'No data found'}, status=404)
 
-# ---------------- API: HISTORICAL LOGS ----------------
+
 def sensor_logs(request, device_name, sensor_type):
     """
     Return the 50 most recent readings stored in DB (/notify inserts them).
@@ -134,7 +129,6 @@ def sensor_logs(request, device_name, sensor_type):
     return JsonResponse({"logs": logs_data})
 
 
-# ---------------- NOTIFY (Subscription Callback) ----------------
 @csrf_exempt
 def notify(request):
     """
@@ -153,7 +147,6 @@ def notify(request):
             value_str = cin.get("con", "{}")
             pi = cin.get("pi", "")
 
-            # Map container → device name
             container_to_device = {
                 "cntaGsbqEvg9o": "SeeedStudioXIAO",
                 "cntRqbXHkN2ee": "ESP32-Gateway",
@@ -179,7 +172,7 @@ def notify(request):
 
     return JsonResponse({"status": "received"})
 
-# ---------------- GATEWAY LIST ----------------
+
 def gateway_list(request):
     """
     Fetch all announced gateways (CSEAnncs) under IN-CSE.
@@ -187,30 +180,50 @@ def gateway_list(request):
     """
     gateways = []
     try:
-        resp = requests.get("http://127.0.0.1:8080/~/id-in", headers=HEADERS, params=params, timeout=5)
+        params = {"fu": "1", "ty": "16"}
+        headers = {**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"}
+        resp = requests.get(
+            "http://127.0.0.1:8080/~/id-in",
+            headers=headers,
+            params=params,
+            timeout=5
+        )
 
-        data = resp.json()
-        refs = data.get("m2m:rrl", {}).get("rrf", [])
-
-        for item in refs:
-            if item.get("typ") == 10005:  # 10005 = CSEAnnc
-                gateways.append({
-                    "name": item.get("nm"),
-                    "path": item.get("val"),
-                    "type": "CSEAnnc"
-                })
+        if resp.status_code == 200:
+            data = resp.json()
+            uris = data.get("m2m:uril", [])
+            
+            for uri in uris:
+                rn = uri.split("/")[-1]
+                
+                resource_url = f"http://127.0.0.1:8080/~/id-in/{uri}"
+                resource_headers = {**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"}
+                resource_resp = requests.get(resource_url, headers=resource_headers, timeout=3)
+                
+                if resource_resp.status_code == 200:
+                    resource = resource_resp.json()
+                    
+                    if "m2m:csr" in resource:
+                        gateways.append({
+                            "name": rn,
+                            "path": f"/id-in/{uri}",
+                            "type": "MN-CSE (remoteCSE)"
+                        })
+                    elif "m2m:cb" in resource:
+                        continue
+                        
     except Exception as e:
         print(f"[ERROR] gateway_list: {e}")
 
     return render(request, "ui/gateway_list.html", {"gateways": gateways})
-# ---------------- ANALYTICS ----------------
+
+
 def analytics_page(request):
-    allowed_devices = ["SeeedStudioXIAO", "ESP32-Gateway"]
+    all_devices = SensorReading.objects.values_list('device_name', flat=True).distinct()
+    devices = sorted(set(all_devices))
+    
+    devices_json = json.dumps(list(devices))
+    
+    return render(request, "ui/analytics.html", {"devices": devices_json})
 
-    all_devices = SensorReading.objects.filter(
-        device_name__in=allowed_devices
-    ).values_list('device_name', flat=True)
-
-    devices = sorted(set(all_devices))  # ✅ ensures truly unique
-
-    return render(request, "ui/analytics.html", {"devices": devices})
+    #test
