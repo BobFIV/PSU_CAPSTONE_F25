@@ -28,7 +28,8 @@ class SensorReading(models.Model):
     Each time we fetch data from CSE, we save it here.
     """
     device_name = models.CharField(max_length=100, db_index=True)  # AE name
-    sensor_type = models.CharField(max_length=50, db_index=True)  # battery, temperature, signal, humidity
+    sensor_type = models.CharField(max_length=50, db_index=True)  # battery, temperature, signal, humiditymac = models.CharField(max_length=32, blank=True, null=True)  # ✅ new
+    mac = models.CharField(max_length=32, blank=True, null=True)  # ✅ new
     value = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -39,4 +40,4 @@ class SensorReading(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.device_name} - {self.sensor_type}: {self.value} at {self.timestamp}"
+        return f"{self.device_name} - {self.sensor_type}: {self.value} at {self.timestamp} from {self.mac}"

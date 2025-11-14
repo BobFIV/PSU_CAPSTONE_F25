@@ -1,154 +1,102 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Dashboard Home</title>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "ui/base.html" %}
+{% block title %}Home | IoT Handover Framework{% endblock %}
 
-        .header {
-            background-color: #1A73E8;
-            color: white;
-            padding: 60px 20px;
-            text-align: center;
-        }
+{% block breadcrumb %}
+<div class="breadcrumb">
+  <i class="fas fa-home"></i>
+  <span>Home</span>
+</div>
+{% endblock %}
 
-        .header h1 {
-            margin: 0;
-            font-size: 2.8rem;
-            font-weight: bold;
-        }
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Welcome to the IoT Handover Framework</h1>
+  <p class="page-description">A seamless, oneM2M-compliant system for managing IoT device connectivity across multiple gateways</p>
+</div>
 
-        .header p {
-            font-size: 1.4rem;
-            margin-top: 10px;
-        }
+<div class="info-banner">
+  <h3><i class="fas fa-info-circle"></i> About This Project</h3>
+  <p><strong>The IoT Handover Framework</strong> is a Penn State Capstone project (Fall 2025) that establishes a seamless handover architecture between multiple gateways (MN-CSEs) and an Infrastructure CSE using the oneM2M ACME framework.</p>
+  
+  <p><strong>System Architecture:</strong></p>
+  <ul>
+    <li><strong>Sensor Layer:</strong> Low-power IoT devices (Seeed Studio XIAO nRF54L15) transmit environmental data via Bluetooth Low Energy (BLE)</li>
+    <li><strong>Gateway Layer:</strong> Edge gateways (Nordic nRF7002 DK + Raspberry Pi 5) collect sensor data and manage device connections</li>
+    <li><strong>oneM2M Layer:</strong> Infrastructure CSE (IN-CSE) controls data flow and manages Middle Node CSEs (MN-CSEs) according to oneM2M standards</li>
+    <li><strong>Application Layer:</strong> This web dashboard visualizes sensor data, device status, and gateway connections</li>
+  </ul>
 
-        .card-container {
-            display: flex;
-            justify-content: center;
-            align-items: stretch;
-            gap: 40px;
-            flex-wrap: wrap;
-            padding: 50px 20px;
-        }
+  <p><strong>Key Features:</strong></p>
+  <ul>
+    <li>Live temperature, humidity, and pressure monitoring from multiple sensor endpoints</li>
+    <li>Handover mechanism using signal strength analysis</li>
+    <li>Device tracking ensures data flow across gateway transitions</li>
+    <li>oneM2M-compliant resource hierarchy for standardized IoT communication</li>
+    <li>Notifications for instant data updates</li>
+  </ul>
 
-        .card {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-            flex: 1 1 280px;
-            max-width: 320px;
-            min-height: 320px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 30px 20px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
+  <p><strong>Current Status:</strong> The system is fully integrated from embedded devices through cloud infrastructure. Active handover implementation is in progress, which allows devices to switch between gateways based on signal strength.</p>
+</div>
 
-        .card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-        }
+<div class="page-header" style="margin-top: 50px;">
+  <h2 class="page-title" style="font-size: 1.8rem;">Quick Navigation</h2>
+  <p class="page-description">Select a section to explore the IoT framework</p>
+</div>
 
-        .card h3 {
-            text-align: center;
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            color: #222;
-        }
+<div class="card-container">
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-microchip"></i></div>
+    <h3>Device Management</h3>
+    <p>View all registered Application Entities (AEs), check sensor readings, and monitor device status. Each device represents a sensor endpoint connected through the oneM2M hierarchy.</p>
+    <button onclick="window.location.href='/devices/'">
+      <i class="fas fa-arrow-right"></i> View Devices
+    </button>
+  </div>
 
-        .card p {
-            text-align: center;
-            font-size: 1.05rem;
-            color: #555;
-            flex-grow: 1;
-        }
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-server"></i></div>
+    <h3>Gateway Network</h3>
+    <p>Monitor MN-CSE gateways registered to the IN-CSE. Gateways serve as middle nodes that collect sensor data and forward it to the cloud infrastructure.</p>
+    <button onclick="window.location.href='/gateways/'">
+      <i class="fas fa-arrow-right"></i> View Gateways
+    </button>
+  </div>
 
-        .card button {
-            background-color: #1A73E8;
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin-top: 20px;
-        }
+  <div class="card">
+    <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+    <h3>Data Analytics</h3>
+    <p>Explore sensor data with charts. See temperature patterns, compare device performance, and track different conditions over time.</p>
+    <button onclick="window.location.href='/analytics/'">
+      <i class="fas fa-arrow-right"></i> View Analytics
+    </button>
+  </div>
+</div>
 
-        .card button:hover {
-            background-color: #1565C0;
-        }
+<div class="info-banner" style="margin-top: 50px; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-left-color: #f57c00;">
+  <h3><i class="fas fa-tools"></i> System Configuration</h3>
+  <p><strong>IN-CSE Endpoint:</strong> The Infrastructure CSE is hosted locally and manages the entire oneM2M resource hierarchy.</p>
+  <p><strong>Communication Protocol:</strong> All components communicate via APIs following oneM2M standards.</p>
+  <p><strong>Data Flow:</strong> Sensor → BLE → Gateway (nRF7002 DK) → UART → Raspberry Pi (MN-CSE) → IN-CSE → CloudAppAE (Dashboard)</p>
+  <p><strong>Update Frequency:</strong> Dashboard refreshes sensor data every 5 seconds from the IN-CSE.</p>
+</div>
 
-        .logout-btn {
-            position: fixed;
-            right: 40px;
-            top: 40px;
-            background-color: #e53935;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+<div class="stats-grid" style="margin-top: 40px;">
+  <div class="stat-card">
+    <div class="stat-value"><i class="fas fa-database"></i></div>
+    <div class="stat-label">oneM2M Compliant</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><i class="fas fa-sync-alt"></i></div>
+    <div class="stat-label">Real-Time Sync</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><i class="fas fa-shield-alt"></i></div>
+    <div class="stat-label">Secure Protocol</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value"><i class="fas fa-expand-arrows-alt"></i></div>
+    <div class="stat-label">Scalable Design</div>
+  </div>
+</div>
 
-        .logout-btn:hover {
-            background-color: #c62828;
-        }
-
-        @media (max-width: 900px) {
-            .card-container {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .logout-btn {
-                position: static;
-                margin: 20px auto;
-                display: block;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <button class="logout-btn" onclick="window.location.href='/'">Log Out</button>
-
-    <div class="header">
-        <h1>Welcome to the IoT Dashboard</h1>
-        <p>Select a view to continue.</p>
-    </div>
-
-    <div class="card-container">
-        <div class="card">
-            <h3>Select a Device</h3>
-            <p>Choose a device from the list and view its sensors and data.</p>
-            <button onclick="window.location.href='/devices/'">Go to Device Selection</button>
-        </div>
-
-        <div class="card">
-            <h3>MN-CSE Registrations & Gateway Details</h3>
-            <p>View the different MN-CSEs registered to the IN-CSE along with key gateway information.</p>
-            <button onclick="window.location.href='/gateway_data/'">View Device Data</button>
-        </div>
-
-        <div class="card">
-            <h3>Analytics</h3>
-            <p>Explore data analytics and insights based on the devices and sensors.</p>
-            <button onclick="window.location.href='/analytics/'">Go to Analytics</button>
-        </div>
-    </div>
-
-</body>
-</html>
+{% endblock %}
