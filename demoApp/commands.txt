@@ -1,3 +1,0 @@
-sudo nmcli --ask dev wifi connect "oneM2M_Local" password "Coleisthebest" name "home"
-
-sudo nmcli dev wifi list
