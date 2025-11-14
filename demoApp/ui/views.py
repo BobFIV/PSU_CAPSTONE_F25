@@ -152,8 +152,8 @@ def notify(request):
             pi = cin.get("pi", "")
 
             container_to_device = {
-                "cnt70TrJPVepD": "SeeedStudioXIAO",
-                "cntLiT4HcLXL4": "ESP32-Gateway",
+                "cnt70TrJPVepD": "SEEED_XIAO",
+                "cntLiT4HcLXL4": "ESP32",
             }
 
             device_name = container_to_device.get(pi, "Unknown")
