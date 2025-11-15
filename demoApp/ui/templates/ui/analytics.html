@@ -153,7 +153,7 @@
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const deviceNames = JSON.parse('{{ devices|escapejs }}');
+  const deviceNames = JSON.parse('{{ devices_json|escapejs }}');
 
   deviceNames.forEach((device, i) => {
     const chartIndex = i + 1;

@@ -152,7 +152,7 @@ def notify(request):
             pi = cin.get("pi", "")
 
             container_to_device = {
-                "cnt70TrJPVepD": "SEEED_XIAO",
+                "cntkpBqahrMBu": "SEEED_XIAO",
                 "cntLiT4HcLXL4": "ESP32",
             }
 
@@ -228,4 +228,4 @@ def analytics_page(request):
     
     devices_json = json.dumps(list(devices))
     
-    return render(request, "ui/analytics.html", {"devices": devices_json})
+    return render(request, "ui/analytics.html", {"devices": devices, "devices_json": devices_json})
