@@ -2,7 +2,6 @@
 import serial
 import struct
 import threading
-import sys
 import time
 import json
 import requests
@@ -20,6 +19,10 @@ BAUD_RATE = 115200
 CSE_IP = "192.168.0.102"
 BASE_URL = f"http://{CSE_IP}:8080/cse-in"
 
+MAC_DEVICE_MAP = {
+    "D2:29:B2:D0:66:FC": "SEEED_XIAO",
+}
+
 HEADERS = {
     "X-M2M-Origin": "CAdmin",
     "X-M2M-RI": f"req-{int(time.time()*1000)}",
@@ -27,25 +30,12 @@ HEADERS = {
     "Content-Type": "application/json;ty=4",
 }
 
-# --- Flask ---
 FLASK_PORT = 8000
-
-# =============================================================================
-# GLOBAL SERIAL HANDLE
-# =============================================================================
 SER = None
 SER_LOCK = threading.Lock()
-
-# =============================================================================
-# FLASK APP
-# =============================================================================
-
 app = Flask(__name__)
 
-
-# =============================================================================
-# UART COMMAND HELPERS (Whitelist, Disconnect, etc.)
-# =============================================================================
+# Uart Commands
 
 def uart_send(cmd_str):
     """Thread-safe UART command sender."""
@@ -66,9 +56,7 @@ def dc(mac):
     uart_send(f"DC {mac}")
 
 
-# =============================================================================
-# FLASK INBOX HANDLER
-# =============================================================================
+# Flask inbox handler
 
 @app.route("/notify", methods=["POST"])
 def notify():
@@ -119,7 +107,10 @@ def notify():
 # =============================================================================
 
 def send_to_cse_temperature(device_addr, temp_c):
-    url = f"{BASE_URL}/SEEED_XIAO/temperature"
+
+    
+    device_ae = MAC_DEVICE_MAP.get(device_addr, device_addr)
+    url = f"{BASE_URL}/{device_ae}/temperature"
 
     payload = {
         "m2m:cin": {
@@ -138,7 +129,7 @@ def send_to_cse_temperature(device_addr, temp_c):
 
 
 def post_scan_rssi(mac, rssi, connected):
-    url = f"{BASE_URL}/gw-B/scan"     # <-- update if this is gw-A later
+    url = f"{BASE_URL}/gw-B/scan"
 
     payload = {
         "m2m:cin": {
@@ -157,12 +148,10 @@ def post_scan_rssi(mac, rssi, connected):
         print(f"[WARN] RSSI CIN failed {r.status_code}: {r.text}")
 
 
-# =============================================================================
-# PACKET PARSERS
-# =============================================================================
+# Packet parsers
 
 def parse_sensor_payload(payload):
-    device_addr = payload[:30].decode("utf-8", errors="ignore").strip("\x00")
+    device_addr = payload[:30].decode("utf-8", errors="ignore").strip("\x00").split()[0]
     print(f"\n📦 SENSOR from {device_addr}")
 
     idx = 30
@@ -239,9 +228,7 @@ def parse_framed_packet(packet):
         print(f"[WARN] Unknown type 0x{pkt_type:02X}")
 
 
-# =============================================================================
-# UART READ LOOP
-# =============================================================================
+# UART read loop
 
 def uart_read_loop():
     buffer = b""
@@ -264,19 +251,11 @@ def uart_read_loop():
             parse_framed_packet(pkt)
 
 
-# =============================================================================
-# FLASK THREAD WRAPPER
-# =============================================================================
 
 class FlaskThread(threading.Thread):
     def run(self):
         server = make_server("0.0.0.0", FLASK_PORT, app)
         server.serve_forever()
-
-
-# =============================================================================
-# MAIN
-# =============================================================================
 
 def main():
     global SER
