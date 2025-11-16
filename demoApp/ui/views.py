@@ -1,16 +1,14 @@
-import time
 import requests
 import json
 import uuid
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import HandoverEvent, HandoverState, SensorReading, RSSIReading
-from django.utils.timezone import now
 
-# ---------------------------------------
-# OneM2M base config
-# ---------------------------------------
+from orchestrator.mappings import SUR_MAP
+from orchestrator.save_handlers import save_rssi, save_temperature
+from .models import SensorReading
+
 
 BASE_URL = "http://127.0.0.1:8080/~/id-in/cse-in"
 
@@ -20,27 +18,6 @@ HEADERS = {
     "Accept": "application/json",
 }
 
-# ---------------------------------------
-# MAC → Device name mapping
-# ---------------------------------------
-MAC_DEVICE_MAP = {
-    "D2:29:B2:D0:66:FC": "SEEED_XIAO",
-    # Add ESP32 here later
-}
-
-# ---------------------------------------
-# Subscription → processing mapping
-# ---------------------------------------
-SUR_MAP = {
-    "subLv4fd0fZH5": {    # Example: temp subscription
-        "type": "temperature",
-        "device": "SEEED_XIAO",
-    },
-    "subIGPRVOogVb": {    # Example: RSSI from gw-B
-        "type": "rssi",
-        "gateway": "gw-B",
-    },
-}
 
 
 # =============================================================================
@@ -165,181 +142,6 @@ def sensor_logs(request, device_name, sensor_type):
             for r in logs
         ]
     })
-
-
-# =============================================================================
-# SAVE HELPERS
-# =============================================================================
-
-def save_temperature(device_name, tempC):
-    try:
-        if tempC is None:
-            print("⚠ save_temperature: Missing tempC")
-            return
-
-        SensorReading.objects.create(
-            device_name=device_name,
-            sensor_type="temperature",
-            value=float(tempC),
-            timestamp=now()
-        )
-
-        print(f"🌡 DB: Saved temperature {tempC} for {device_name}")
-
-    except Exception as e:
-        print(f"[ERROR] save_temperature: {e}")
-
-
-def save_rssi(gateway, mac, rssi, connected):
-    try:
-        device_name = MAC_DEVICE_MAP.get(mac)
-        if not device_name:
-            print(f"⚠ Unknown MAC {mac}, ignoring")
-            return
-        
-        # Store RSSI in the RSSIReading model
-        RSSIReading.objects.create(
-            mac=mac,
-            gateway=gateway,
-            rssi=float(rssi),
-            connected=connected,
-            timestamp=now()
-        )
-
-        print(f"📡 DB: Saved RSSI {rssi} dBm for {mac} via {gateway}")
-
-        # If connected=True → update orchestrator current gateway
-        if connected:
-            HandoverState.objects.update_or_create(
-                mac=mac,
-                defaults={"current_gateway": gateway}
-            )
-
-        # Run the orchestrator logic
-        evaluate_handover(mac)
-
-    except Exception as e:
-        print(f"[ERROR] save_rssi: {e}")
-
-
-
-# =============================================================================
-# GATEWAY TRACKING
-# =============================================================================
-
-# RSSI thresholds
-RSSI_BAD_THRESHOLD = -80   # below this is considered poor connection
-RSSI_HANDOVER_MARGIN = 12  # new GW must be stronger by this amount
-
-def latest_rssi(mac, gateway):
-    last = RSSIReading.objects.filter(mac=mac, gateway=gateway).order_by('-timestamp').first()
-    return last.rssi if last else -200
-
-def evaluate_handover(mac):
-    try:
-        state = HandoverState.objects.get(mac=mac)
-    except HandoverState.DoesNotExist:
-        print(f"⚠ No handover state for {mac}")
-        return
-
-    current_gw = state.current_gateway
-
-    # Get the latest scan reports
-    scans = RSSIReading.objects.filter(mac=mac).order_by('-timestamp')[:4]
-    if not scans:
-        return
-    
-    # Determine the best gateway based on highest RSSI
-    best_gateway = None
-    best_rssi = -200
-
-    for s in scans:
-        if s.rssi > best_rssi:
-            best_rssi = s.rssi
-            best_gateway = s.gateway
-
-    if best_gateway is None:
-        return
-
-    current_rssi = latest_rssi(mac, current_gw)
-
-    # 1. If the current gateway is still clearly dominant → do nothing
-    if current_rssi > best_rssi - RSSI_HANDOVER_MARGIN:
-        return
-
-    # 2. Only switch when current gateway is truly bad
-    if current_rssi > RSSI_BAD_THRESHOLD:
-        return
-
-    # 3. Perform handover
-    trigger_handover(mac, current_gw, best_gateway)
-
-
-def trigger_handover(mac, old_gw, new_gw):
-    print(f"\n🔀 Handover required for {mac}: {old_gw} → {new_gw}\n")
-
-    # Remove from every gateway's whitelist
-    gateways = ["gw-A", "gw-B", "gw-C"]   # adjust to your config
-    for gw in gateways:
-        post_inbox_command(gw, f"WL_DEL {mac}")
-
-    time.sleep(0.2)
-
-    # Add to new gateway
-    post_inbox_command(new_gw, f"WL_ADD {mac}")
-
-    # Disconnect from old gateway
-    post_inbox_command(old_gw, f"DC {mac}")
-
-    # Update state
-    HandoverState.objects.update_or_create(mac=mac, defaults={"current_gateway": new_gw})
-
-    # Log event
-    HandoverEvent.objects.create(mac=mac, from_gw=old_gw, to_gw=new_gw)
-
-    print(f"✅ Handover complete {mac}: {old_gw} → {new_gw}")
-
-def post_inbox_command(gateway, command):
-    try:
-        url = f"http://127.0.0.1:8080/cse-in/{gateway}/inbox"
-        headers = {
-            "X-M2M-Origin": "CAdmin",
-            "X-M2M-RI": f"req-{uuid.uuid4()}",
-            "X-M2M-RVI": "3",
-            "Content-Type": "application/json;ty=4",
-        }
-        payload = {
-            "m2m:cin": {
-                "con": command
-            }
-        }
-
-        r = requests.post(url, headers=headers, json=payload)
-        if r.status_code in (200, 201):
-            print(f"📤 Sent command to {gateway}: {command}")
-        else:
-            print(f"⚠ Inbox command failed: {r.status_code} {r.text}")
-
-    except Exception as e:
-        print(f"[ERROR] post_inbox_command: {e}")
-
-
-def update_current_gateway(mac, gateway):
-    """
-    Stores which gateway the device is CURRENTLY attached to.
-    """
-    print(f"🔗 Device {mac} → connected to {gateway}")
-
-    # TODO: requires creating HandoverState model
-    # HandoverState.objects.update_or_create(
-    #     mac=mac,
-    #     defaults={"current_gateway": gateway}
-    # )
-
-
-# =============================================================================
-# NOTIFICATION (main entry point)
-# =============================================================================
 
 @csrf_exempt
 def notify(request):
