@@ -1,108 +1,135 @@
-# PSU_CAPSTONE_F25 — IoT Handover Framework
+# 🚀 PSU_CAPSTONE_F25 — IoT Handover Framework
 
-## Overview
-This repository contains the **complete IoT Handover Framework** developed as part of our Penn State Capstone project (Fall 2025).  
-The system aims to establish a **seamless handover architecture** between multiple gateways (MN-CSEs) and a centralized IN-CSE using the **oneM2M ACME** framework.
+## 🌐 Overview
 
-Currently, the **web dashboard (DemoApp)** is the main working component, serving as the user interface for visualizing devices, sensors, and ACME resource data.  
-Future components (e.g., `handover/`, `sensor/`, `gateway/`) are in progress and will be integrated once MN-CSE ↔ IN-CSE communication is fully established.
+This repository contains the **IoT Handover Framework** developed for the Penn State Fall 2025 Senior Capstone Project.  
+The system implements a **local, multi-gateway IoT mobility architecture** using the **oneM2M ACME platform** and a **custom Django dashboard** (CloudAppAE).
+
+All components run **entirely inside a local Wi-Fi network**, enabling a telco-style handover simulation without requiring external routing, port-forwarding, or cloud services.
+
+### 🧠 Core Concepts
+
+- Multiple **MN-CSE gateways** (Raspberry Pis)
+- One **IN-CSE coordinator** (laptop/server)
+- Devices (ESP32 / Seeed XIAO) send sensor + RSSI data
+- IN-CSE orchestrator makes **handover decisions**
+- CloudAppAE shows **live device movement, RSSI graphs, and events**
 
 ---
 
-## Repository Structure
+# 🏗️ System Architecture
+
+```
+Device (ESP32 / Seeed XIAO)
+        ↓
+MN-CSE Gateway (Raspberry Pi)
+        ↓
+IN-CSE Orchestrator (Laptop)
+        ↓
+CloudAppAE (Django Dashboard)
+```
+
+---
+
+# 📁 Repository Structure
 
 ```
 PSU_CAPSTONE_F25/
 │
-├── demoApp/                # Django web dashboard for IoT data visualization
-│   ├── ui/                 # Frontend HTML templates and views
-│   ├── scripts/            # Bash automation for AE/container creation and management
-│   └── manage.py
-│
-├── gateway/                # (Planned) Gateway management module for MN-CSE integration
-├── handover/               # (Planned) Handover management logic (hardware ↔ network)
-├── sensor/                 # (Planned) Sensor data collection and communication module
-├── oneM2M/                 # (Planned) oneM2M ACME-based management utilities
-├── docker/                 # (Future) Dockerization for local and remote deployments
-├── docs/                   # Documentation and setup guides
-├── tests/                  # Test scripts and validation framework
-│
-├── scripts/                # Standalone helper scripts (AE creation, updates, etc.)
-│   ├── create_ae.sh        # Creates a new AE and associated containers
-│   ├── append_ae_values.sh # Adds new sensor readings to existing AEs
-│   ├── update_views.sh     # Updates Django views.py to include new AEs automatically
-│   └── README.md           # Documentation for using scripts
-│
-├── Makefile                # Shortcuts for setup, running Django, and cleaning
-├── setup.sh                # Environment setup for first-time runs
-├── init_cse_data.sh        # Initializes sample CSE data for testing
-├── registerAE.py           # Python script for programmatic AE registration
-└── .github/                # GitHub metadata and documentation
+├── demoApp/                        # CloudAppAE Django Frontend
+├── oneM2M/                         # IN-CSE + MN-CSE setup + handover simulation
+├── scripts/                        # Utility tools (AE creation, CIN posting, etc.)
+├── setup.sh                        # Environment bootstrapper
+├── requirements.txt                # Python dependencies
+├── Dockerfile                      # Containerization (optional)
+└── README.md                       # (This file)
 ```
 
 ---
 
-## Getting Started
+# ⚙️ Getting Started (High-Level)
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/BobFIV/PSU_CAPSTONE_F25.git
-cd PSU_CAPSTONE_F25
-```
+The system consists of **three components**:
 
-### 2. Set Up the Environment
-Use the setup script to create the virtual environment and install dependencies:
-```bash
-bash setup.sh
-```
+1. **CloudAppAE WebApp** (`demoApp/`)
+2. **IN-CSE Central Coordinator** (`oneM2M/`)
+3. **MN-CSE Gateways** (Raspberry Pis)
 
-Or use the Makefile shortcut:
-```bash
-make setup
-```
-
-### 3. Run the Web Dashboard
-```bash
-make run
-```
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
-
-### 4. Create a New AE (Optional for Now)
-Until the **MN-CSE → IN-CSE** link is fully established, AEs and containers are managed through scripts.
-
-To create a new AE and its containers:
-```bash
-cd scripts
-./create_ae.sh
-```
-You will be prompted to enter the AE name, Originator ID, and sensor values for containers (`temperature`, `humidity`, `battery`, `signal`).  
-The script will automatically update Django so the new AE appears in the device list.
-
+Each has its own README with full instructions.
 
 ---
 
-## Current Status
-- The **web app** (`demoApp/`) is fully functional for visualizing ACME data, however backend must be updated manually.
-- The **ACME IN-CSE** is connected and supports AE creation via REST API.
-- The **MN-CSE integration** (Raspberry Pi gateways) is **in progress** and will soon handle automatic AE registration and real-time sensor updates.
+# 1️⃣ CloudAppAE WebApp (Django)
+
+- Runs the device dashboard  
+- Receives oneM2M notifications via `/notify/`  
+- Stores & visualizes sensor data + mobility events  
+
+See full guide:  
+👉 `demoApp/README.md`
 
 ---
 
-## Contributors
+# 2️⃣ oneM2M IN-CSE (Laptop / Server)
 
-### oneM2M Team
-- **Cole Nelson** 
-- **Eric Shin**
-- **Donald Jeter Boswell**
-- **Khairol Eimannajwan**
+- Hosts the ACME **Infrastructure Node CSE**
+- Registers AEs from all MN-CSEs
+- Receives CINs + forwards notifications to Django
+- Runs orchestrator logic for handover simulation
 
-### Embedded Systems Team
-- **David Johnson**
-- **Ethan Liu**
-- **Steven Bowman**
+Setup instructions:  
+👉 `oneM2M/README.md`
 
 ---
 
-## License
-This project is developed for educational purposes under Penn State University’s Capstone Program (Fall 2025).  
-All rights reserved to the project team and supervising faculty.
+# 3️⃣ Raspberry Pi MN-CSE Gateways
+
+- Each Pi hosts ACME **Middle Node CSE**
+- Receives UART sensor packets
+- Sends CINs upward to IN-CSE
+- Emits RSSI/MAC for mobility decisions
+
+Guide also in:  
+👉 `oneM2M/README.md`
+
+---
+
+# 🧪 Simulation Tools
+
+Inside `oneM2M/`:
+
+- `handover.py` — Single-device handover simulation  
+- `handover_multi.py` — Multi-device, multi-threaded mobility simulator  
+
+Used for validating handover logic before embedded RSSI integration.
+
+---
+
+# 📊 Current System Status
+
+| Component | Status | Notes |
+|----------|--------|-------|
+| CloudAppAE Dashboard | ✔️ Stable | Live RSSI, devices, handovers |
+| IN-CSE Orchestrator | 🟡 Partial | Basic algorithm; full MAC/RSSI integration pending |
+| MN-CSE Gateways | 🟡 Working | Posting CINs, reporting RSSI |
+| Sensor Nodes | 🟡 In Progress | UART → MN-CSE pipeline being finalized |
+
+---
+
+# 👥 Contributors
+
+- Cole Nelson  
+- Eric Shin  
+- Donald Jeter Boswell  
+- Khairol Eimannajwan  
+- David Johnson  
+- Ethan Liu  
+- Steven Bowman  
+
+---
+
+# 📜 License
+
+Developed under the  
+**Penn State College of Engineering Senior Capstone Program (Fall 2025)**.  
+All rights reserved.

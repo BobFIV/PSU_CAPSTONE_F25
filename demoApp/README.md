@@ -1,127 +1,193 @@
-# DemoApp Web Application (IoT Dashboard)
+# 📡 CloudAppAE — Django Frontend & Notification Handler
 
-## Overview
+## 🌐 Overview
 
-This repository contains the **web application** component of our Capstone project — the **IoT Handover Framework**.  
-The web application is built using **Django** and serves as the central **IoT dashboard** for monitoring Application Entities (AEs), their sensors, and real-time data integrated through the **ACME oneM2M IN-CSE** server hosted on AWS.
+The **CloudAppAE** is the web-facing component of the IoT Handover Framework.  
+It serves as the system’s **Application Entity (AE)** and provides:
 
-Previously, a fake device simulator (`fake_device.py`) was used to populate data when the ACME-CSE connection was unavailable.  
-**Now, the backend is fully connected to ACME-CSE**, and we use **automation scripts** to register AEs, create containers, and push sensor data directly.
+- Real-time device dashboard  
+- Live RSSI visualization  
+- Handover event logging  
+- OneM2M `/notify` endpoint  
+- Device + gateway association insights  
 
-For now, **this script-based setup** will serve as the primary way to generate and manage new AEs, until the MN-CSE nodes are connected and synchronized with the IN-CSE.
-
----
-
-## Features
-
-- Django web dashboard for IoT devices and analytics  
-- Real-time retrieval of AE and container data from ACME-CSE  
-- Automated AE creation and registration through shell scripts  
-- Built-in data append functionality for updating sensor readings  
-- Dashboard auto-updates to recognize new AEs dynamically  
-- Future support for MN-CSE → IN-CSE integration  
+This is the interface that brings the entire mobility system to life.
 
 ---
 
-## Setup Instructions
+# 🏗️ Architecture
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/BobFIV/PSU_CAPSTONE_F25.git
-cd PSU_CAPSTONE_F25
-
+```
+IN-CSE (Laptop)
+        ↓  oneM2M Notification
+CloudAppAE (/notify)
+        ↓
+Django Models → Database
+        ↓
+Dashboard UI (Devices, RSSI, CINs, Events)
 ```
 
 ---
 
-### 2. Environment Setup
-If you have `make` installed:
-```bash
-make setup
+# 📁 Project Structure
+
+```
+demoApp/
+│
+├── ui/                         
+│   ├── templates/              # HTML pages for dashboard
+│   ├── dash_apps/              # Optional analytics (Plotly/Dash)
+│   ├── migrations/             # DB migrations
+│   ├── models.py               # Device + SensorReading storage
+│   ├── views.py                # Core logic + /notify endpoint
+│   ├── urls.py                 # Routing
+│   └── apps.py
+│
+├── scripts/                    # AE + container creation tools
+└── manage.py                   # Django app launcher
 ```
 
-#### Option B: Manual Setup
+---
+
+# ⚙️ Setup Instructions
+
+## 1️⃣ Create Virtual Environment
+
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate      # Mac/Linux
+venv\Scripts\activate       # Windows
+```
+
+## 2️⃣ Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-### 3. Run the Web Application
+# 🔧 Environment Variables
+
+Create a file named `.env` in the project root:
+
+```
+IN_CSE_BASE_URL=http://<in-cse-ip>:8080/~/in-cse/in-name
+CLOUDAPP_POA=http://<your-ip>:8000/notify/
+DJANGO_SECRET_KEY=REPLACE_ME
+DEBUG=True
+```
+
+---
+
+# ▶️ Running the Server
+
+## Development Mode
+
 ```bash
-make run
+python manage.py runserver
 ```
-Then open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
----
+Visit:
 
-### 4. Adding New Application Entities (AEs)
+```
+http://127.0.0.1:8000
+```
 
-Since the MN-CSE is not yet connected to the IN-CSE, we are currently using **automation scripts** to create and manage AEs directly through the IN-CSE.  
+## Production Mode (Gunicorn + Nginx)
 
-These scripts can be found in the `scripts/` directory and include:
-
-| Script | Description |
-|--------|--------------|
-| `create_ae.sh` | Creates a new AE on the IN-CSE, adds containers, posts initial values, and updates Django `views.py` automatically. |
-| `append_ae_values.sh` | Appends new data values to existing AEs. |
-| `update_views.sh` | Updates `ui/views.py` with new AE endpoints for dashboard recognition. |
-| `setup_ae.sh` | Master script that runs all three steps in sequence (create → update → append). |
-
-Example usage:
 ```bash
-cd scripts
-./create_ae.sh
+gunicorn ui.wsgi:application --bind 0.0.0.0:8000
 ```
-You will be prompted to enter the AE name, Originator ID, and sensor values for containers (`temperature`, `humidity`, `battery`, `signal`).  
-The script will automatically update Django so the new AE appears in the device list.
 
 ---
 
-### 5. Cleaning up
+# 📬 oneM2M Notification Endpoint (`/notify/`)
+
+This is where IN-CSE sends CIN updates.
+
+### Example Payload
+
+```json
+{
+  "m2m:sgn": {
+    "nev": {
+      "rep": {
+        "m2m:cin": {
+          "con": "27.5"
+        }
+      }
+    },
+    "net": 3
+  }
+}
+```
+
+### Processing Flow
+
+1. IN-CSE detects new CIN  
+2. POST → `/notify/`  
+3. Django parses the signal  
+4. Device + reading stored  
+5. Dashboard updates  
+
+---
+
+# 🗄️ Database Commands
+
+Apply migrations:
+
 ```bash
-make clean
+python manage.py migrate
 ```
 
-## Project Structure
-```
-PSU_CAPSTONE_F25/
-│
-├── demoApp/                      # Main Django web app
-│   ├── manage.py                 # Django management script
-│   ├── demoApp/                  # Django project settings
-│   ├── ui/                       # Frontend templates and views
-│   └── ui/management/commands/   # (Previously contained fake_device.py)
-│
-├── scripts/                      # oneM2M automation scripts
-│   ├── create_ae.sh              # Create new AEs and containers
-│   ├── append_ae_values.sh       # Append new readings
-│   ├── update_views.sh           # Auto-update Django views
-│   └── setup_ae.sh               # Master orchestrator
-│
-├── Makefile                      # Shortcuts for setup, run, and clean
-├── setup.sh                      # Auto environment setup (optional)
-└── .github/                      # GitHub documentation and workflow files
+Create admin user:
+
+```bash
+python manage.py createsuperuser
 ```
 
 ---
 
-## Notes
+# 🛠️ Utility Scripts
 
-- Keep your `venv/` folder **out of version control** (`.gitignore` already covers it).  
-- The system integrates with the hosted ACME-CSE instance at:  
-  `http://54.164.106.20:8080`  
-- All automation scripts in `scripts/` are interactive and reusable.  
-- Once MN-CSE integration is complete, AE creation will occur automatically during device registration.  
+### Create AE Automatically
+
+```bash
+python scripts/create_ae.py
+```
+
+### Test Notification Handling
+
+```bash
+python scripts/test_notify.py
+```
 
 ---
 
-## Contributors
+# 📊 UI Pages
 
-- Capstone Project Team, Penn State University  
+| URL | Description |
+|-----|-------------|
+| `/` | Dashboard home |
+| `/devices` | Device list + details |
+| `/analytics` | RSSI + sensor plots |
+| `/logs` | Handover + orchestrator events |
 
 ---
 
-© 2025 — Penn State Capstone F25, IoT Handover Framework
+# 🐞 Troubleshooting
+
+### ❌ Not receiving notifications  
+- Ensure PoA ends with `/notify/`  
+- Confirm IN-CSE ↔ Django connectivity  
+- Verify `net=3` in subscription
+
+### ❌ CSRF issues  
+Add `@csrf_exempt` to `/notify/`.
+
+### ❌ CIN not appearing  
+Check container path + mirrored resources.
+
+---
+
