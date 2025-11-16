@@ -147,7 +147,6 @@ def sensor_logs(request, device_name, sensor_type):
 def notify(request):
     try:
         body = json.loads(request.body.decode("utf-8"))
-        print("\n📥 Notification received:\n")
 
         sgn = body.get("m2m:sgn", {})
         sur = sgn.get("sur", "")

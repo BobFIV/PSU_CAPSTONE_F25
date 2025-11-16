@@ -16,7 +16,7 @@ def save_temperature(device_name, tempC):
             timestamp=now()
         )
 
-        print(f"🌡 DB: Saved temperature {tempC} for {device_name}")
+        #print(f"🌡 DB: Saved temperature {tempC} for {device_name}")
 
     except Exception as e:
         print(f"[ERROR] save_temperature: {e}")

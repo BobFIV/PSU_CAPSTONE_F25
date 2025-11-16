@@ -11,4 +11,8 @@ SUR_MAP = {
         "type": "rssi",
         "gateway": "gw-B",
     },
+    "subSbxRJZeErp": {
+        "type": "rssi",
+        "gateway": "gw-A",
+    }
 }

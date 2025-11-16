@@ -1,8 +1,8 @@
 from orchestrator.handover import trigger_handover
 from ui.models import HandoverState, RSSIReading
 
-RSSI_BAD_THRESHOLD = -80
-RSSI_HANDOVER_MARGIN = 12
+RSSI_BAD_THRESHOLD = -65
+RSSI_HANDOVER_MARGIN = 6
 
 def latest_rssi(mac, gateway):
     last = RSSIReading.objects.filter(mac=mac, gateway=gateway).order_by('-timestamp').first()
@@ -36,14 +36,21 @@ def evaluate_handover(mac):
 
     current_rssi = latest_rssi(mac, current_gw)
 
-    # 1. If the current gateway is still clearly dominant → do nothing
+    # 1. If the current gateway is still dominant → do nothing
     if current_rssi > best_rssi - RSSI_HANDOVER_MARGIN:
         return
 
     # 2. Only switch when current gateway is truly bad
     if current_rssi > RSSI_BAD_THRESHOLD:
         return
+    
+    if best_gateway == current_gw:
+        return
 
-    # 3. Perform handover
-    trigger_handover(mac, current_gw, best_gateway)
-
+    trigger_handover(
+        mac,
+        current_gw,
+        best_gateway,
+        current_rssi,   # ← old RSSI
+        best_rssi       # ← new RSSI
+    )
