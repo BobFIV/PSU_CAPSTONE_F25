@@ -21,6 +21,7 @@ BASE_URL = f"http://{CSE_IP}:8080/cse-in"
 
 MAC_DEVICE_MAP = {
     "D2:29:B2:D0:66:FC": "SEEED_XIAO",
+    "7C:DF:A1:FB:72:7D": "ESP32"
 }
 
 HEADERS = {

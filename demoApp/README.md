@@ -34,6 +34,9 @@ Dashboard UI (Devices, RSSI, CINs, Events)
 ```
 demoApp/
 │
+├── orchestrator/               # Manage handover process 
+|
+|
 ├── ui/                         
 │   ├── templates/              # HTML pages for dashboard
 │   ├── dash_apps/              # Optional analytics (Plotly/Dash)
@@ -64,20 +67,6 @@ venv\Scripts\activate       # Windows
 ```bash
 pip install -r requirements.txt
 ```
-
----
-
-# 🔧 Environment Variables
-
-Create a file named `.env` in the project root:
-
-```
-IN_CSE_BASE_URL=http://<in-cse-ip>:8080/~/in-cse/in-name
-CLOUDAPP_POA=http://<your-ip>:8000/notify/
-DJANGO_SECRET_KEY=REPLACE_ME
-DEBUG=True
-```
-
 ---
 
 # ▶️ Running the Server

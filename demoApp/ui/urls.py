@@ -12,6 +12,7 @@ urlpatterns = [
     path('gateways/', views.gateway_list, name='gateway_list'),
     path('api/latest/<str:device_name>/<str:sensor_type>/', views.latest_value, name='latest_value'),
     path('api/logs/<str:device_name>/<str:sensor_type>/', views.sensor_logs, name='sensor_logs'),
+    path('api/gateway/<str:device_name>/', views.current_gateway_api, name='current_gateway_api'),
     path('analytics/', views.analytics_page, name='analytics'),
 
 ]

@@ -7,6 +7,10 @@ SUR_MAP = {
         "type": "temperature",
         "device": "SEEED_XIAO",
     },
+    "subxa4XrldS1x": {
+        "type": "temperature",
+        "device": "ESP32",
+    },
     "subIGPRVOogVb": {
         "type": "rssi",
         "gateway": "gw-B",

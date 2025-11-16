@@ -7,8 +7,12 @@ from django.views.decorators.csrf import csrf_exempt
 
 from orchestrator.mappings import SUR_MAP
 from orchestrator.save_handlers import save_rssi, save_temperature
-from .models import SensorReading
+from .models import HandoverState, SensorReading
 
+MAC_DEVICE_MAP = {
+    "SEEED_XIAO": "D2:29:B2:D0:66:FC",
+    "ESP32": "7C:DF:A1:FB:72:7D"
+}
 
 BASE_URL = "http://127.0.0.1:8080/~/id-in/cse-in"
 
@@ -74,7 +78,6 @@ def device_list(request):
 
                     labels = [
                         l for l in ae.get("lbl", [rn])
-                        if l.lower() not in ["device", "gateway", "orchestrator"]
                     ]
 
                     devices.append({
@@ -95,6 +98,7 @@ def device_list(request):
 # =============================================================================
 
 def device_detail(request, device_name):
+    mac = MAC_DEVICE_MAP.get(device_name, "None")
     latest_temp = (
         SensorReading.objects
         .filter(device_name=device_name, sensor_type="temperature")
@@ -102,13 +106,21 @@ def device_detail(request, device_name):
         .first()
     )
 
+    # 🔍 Lookup HandoverState
+    try:
+        state = HandoverState.objects.get(mac=mac)
+        current_gateway = f"Connected via {state.current_gateway}"
+    except HandoverState.DoesNotExist:
+        current_gateway = "No Gateway Status"
+
     container_data = []
     if latest_temp:
         container_data.append(("temperature", latest_temp.value))
 
     return render(request, "ui/device_detail.html", {
         "device_name": device_name,
-        "container_data": container_data
+        "container_data": container_data,
+        "current_gateway": current_gateway,
     })
 
 def latest_value(request, device_name, sensor_type):
@@ -182,30 +194,62 @@ def notify(request):
 # GATEWAY LIST
 # =============================================================================
 
+def current_gateway_api(request, device_name):
+    mac = MAC_DEVICE_MAP.get(device_name, "None")
+    try:
+        from ui.models import HandoverState
+        state = HandoverState.objects.get(mac=mac)
+        return JsonResponse({"gateway": state.current_gateway})
+    except HandoverState.DoesNotExist:
+        return JsonResponse({"gateway": None})
+
+
 def gateway_list(request):
     gateways = []
     try:
-        params = {"fu": "1", "ty": "16"}  # Discover CSEAnncs
+        params = {"fu": "1", "ty": "2"}  # Discover AEs
+        headers = {**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"}
+
         resp = requests.get(
-            "http://127.0.0.1:8080/~/id-in",
-            headers={**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"},
+            f"{BASE_URL}",
+            headers=headers,
             params=params,
             timeout=5
         )
 
+        print("[DEBUG] Raw ACME response:", resp.text)
+
         if resp.status_code == 200:
-            for uri in resp.json().get("m2m:uril", []):
-                url = f"http://127.0.0.1:8080/~/id-in/{uri}"
-                r = requests.get(url, headers=HEADERS, timeout=3)
-                if "m2m:csr" in r.json():
-                    gateways.append({
-                        "name": uri.split("/")[-1],
-                        "path": f"/id-in/{uri}",
-                        "type": "MN-CSE"
-                    })
+            uris = resp.json().get("m2m:uril", [])
+            for uri in uris:
+                rn = uri.split("/")[-1]
+                
+                if rn.lower().startswith("gw-"):
+
+                    ae_url = f"http://127.0.0.1:8080/~/id-in/{uri}"
+                    ae_resp = requests.get(
+                        ae_url,
+                        headers={**HEADERS, "X-M2M-RI": f"req-{uuid.uuid4()}"},
+                        timeout=3
+                    )
+
+                    if ae_resp.status_code == 200:
+                        ae = ae_resp.json().get("m2m:ae", {})
+
+                        labels = [
+                            l for l in ae.get("lbl", [rn])
+                            if l.lower() not in ["device"]
+                        ]
+
+                        gateways.append({
+                            "name": rn,
+                            "label": ", ".join(labels) if labels else rn,
+                            "gateway": ae.get("api", "Unknown"),
+                            "path": f"/id-in/{uri}",
+                        })
 
     except Exception as e:
-        print(f"[ERROR] gateway_list: {e}")
+        print(f"[ERROR] device_list: {e}")
 
     return render(request, "ui/gateway_list.html", {"gateways": gateways})
 
