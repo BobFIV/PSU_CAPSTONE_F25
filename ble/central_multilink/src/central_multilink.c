@@ -399,6 +399,9 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 	/* Track this disconnection */
 	track_device_disconnect(conn_addr, reason);
 
+	/* Update SEEED connection state */
+	on_ble_disconnected(conn);
+
 	bt_conn_unref(conn);
 
 	if ((conn_count == 1U) && (is_disconnecting || (reason == BT_HCI_ERR_CONN_FAIL_TO_ESTAB))) {
@@ -661,6 +664,5 @@ void le_data_len_updated(struct bt_conn *conn,
 	       info->rx_max_time);
 }
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
-
 
 
