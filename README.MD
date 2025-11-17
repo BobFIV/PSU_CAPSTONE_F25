@@ -38,10 +38,8 @@ PSU_CAPSTONE_F25/
 │
 ├── demoApp/                        # CloudAppAE Django Frontend
 ├── oneM2M/                         # IN-CSE + MN-CSE setup + handover simulation
-├── scripts/                        # Utility tools (AE creation, CIN posting, etc.)
 ├── setup.sh                        # Environment bootstrapper
 ├── requirements.txt                # Python dependencies
-├── Dockerfile                      # Containerization (optional)
 └── README.md                       # (This file)
 ```
 

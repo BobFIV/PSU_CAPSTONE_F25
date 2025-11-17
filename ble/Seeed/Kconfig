@@ -1,0 +1,28 @@
+source "Kconfig.zephyr"
+
+menu "Sensor Node"
+
+config CONNECTABLE_ADV_INTERVAL_MIN
+	int "Connectable advertising minimum interval"
+	default 4800
+	help
+	  Connectable advertising minimum interval in 0.625 milliseconds unit.
+
+config CONNECTABLE_ADV_INTERVAL_MAX
+	int "Connectable advertising maximum interval"
+	default 4808
+	help
+	  Connectable advertising maximum interval in 0.625 milliseconds unit.
+config APP_CONTROL_SAMPLING_INTERVAL_S
+	int "sample interval [s]"
+	range 10 5400
+	default 10
+	help
+	  Time in seconds between sample data acquisition from sensors
+config SIMULATED_SENSOR
+	bool "Enable simulated sensor"
+	default y
+	help
+	  In case you don't have environmental and IMU sensors, enabling this option will 
+	  build a simulated sensor driver	
+endmenu

@@ -1,223 +1,175 @@
-# 🌐 oneM2M Local Network Setup (IN-CSE, MN-CSE, and Django Frontend)
+# oneM2M Local IN‑CSE Architecture (Gateways + Devices + Django Dashboard)
 
-This guide walks you through setting up a **local oneM2M environment** consisting of:
+This README explains **your current architecture**, based on the updated structure of the IN‑CSE resource tree and how it matches your gateway code, Django orchestrator logic, and BLE device data flow.
 
-* An **IN-CSE** (central coordinator, usually your laptop)
-* One or more **MN-CSEs** (e.g., Raspberry Pis acting as gateways)
-* **Devices / AEs** (e.g., ESP32, Seeed Studio XIAO)
-* A **Django frontend** that receives sensor notifications and displays live data
+It replaces the old multi‑CSE (IN‑CSE + MN‑CSE) guide with a **clean, simplified explanation** of your actual setup.
 
 ---
 
-## 🧩 System Overview
+# 📡 System Architecture (Updated)
 
 ```
-[ESP32 / Seeed XIAO] → [MN-CSE (Raspberry Pi)] → [IN-CSE (Laptop)] → [Django Frontend]
+                    ┌─────────────────────────────┐
+                    │        Django Orchestrator   │
+                    │  (notify → save handlers)    │
+                    └──────────────┬──────────────┘
+                                   │ subscriptions
+                                   ▼
+                        ┌─────────────────────┐
+                        │      IN‑CSE (ACME)  │
+                        │   http://<IP>:8080  │
+                        └───────────┬─────────┘
+                                    │
+                  ┌─────────────────┼──────────────────┐
+                  │                 │                  │
+                  ▼                 ▼                  ▼
+          ┌────────────┐   ┌────────────┐     ┌────────────┐
+          │   ESP32     │   │   gw‑A      │     │   gw‑B      │
+          │(Sensor AE)  │   │(Gateway AE)│     │(Gateway AE)│
+          └─────┬───────┘   └─────┬──────┘     └─────┬──────┘
+                │                 │                  │
+       CNT: temperature     CNT: scan          CNT: scan
+                          CNT: inbox          CNT: inbox
 ```
 
-All components run on the same **local Wi-Fi network**.  
-Data flows upward automatically via the oneM2M protocol.
+This matches exactly what your CSE tree shows:
 
----
-
-## 🧰 Prerequisites
-
-### Hardware
-* Laptop (acts as IN-CSE + Django frontend)
-* One or more Raspberry Pis (MN-CSEs / gateways)
-* Optional sensors (ESP32, Seeed Studio XIAO)
-
-### Software
-* Python ≥ 3.10
-* Git
-* Open ports `8080` (for ACME) and `8000` (for Django)
-
-### Basic setup
-
-```bash
-sudo apt install python3-full python3-venv git
 ```
-
----
-
-## 1️⃣ Clone the ACME oneM2M CSE
-
-Run on both **IN-CSE** (laptop) and **MN-CSE** (Pi):
-
-```bash
-git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
-cd ACME-oneM2M-CSE
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+CSE:
+  AE: ESP32
+      CNT: temperature
+  AE: gw‑A
+      CNT: inbox
+      CNT: scan
+  AE: gw‑B
+      CNT: scan
+      CNT: inbox
+  AE: SEEED_XIAO
 ```
 
 ---
 
-## 2️⃣ Start the IN-CSE (on Laptop)
+# 🎯 High‑Level Summary
 
-```bash
-python3 -m acme
+### ✔ IN‑CSE only  
+You run **one** ACME instance (IN‑CSE) on your laptop.  
+Gateways do **not** run MN‑CSEs. Gateways are simply **AEs**.
+
+### ✔ Gateways register themselves  
+`gw-A` and `gw-B` create:
+
+- `scan` container → where RSSI scan results are posted  
+- `inbox` container → where the orchestrator posts WL_ADD, WL_DEL, DC commands  
+
+### ✔ Devices send CINs to their temperature container  
+ESP32 and XIAO write CINs into:
+
+```
+/cse-in/ESP32/temperature
+/cse-in/SEEED_XIAO/temperature
 ```
 
-Default port: **8080**  
-Example IN-CSE URL: `http://192.168.0.102:8080`
+### ✔ Django subscribes to these  
+IN‑CSE sends notifications to:
 
-Verify:
-
-```bash
-curl -X GET http://192.168.0.102:8080/cse-in \
-  -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: reqTest" \
-  -H "Accept: application/json"
 ```
+http://<Django-IP>:8000/notify/
+```
+
+### ✔ Django evaluates RSSI, performs handover  
+Django:
+
+- saves RSSI readings  
+- checks if a handover is needed  
+- writes commands into gateway inboxes  
+- updates HandoverState  
+- logs HandoverEvent  
 
 ---
 
-## 3️⃣ Start the MN-CSE (on Raspberry Pi)
+# 🔧 ACME Resource Breakdown (Your Actual Layout)
 
-Edit `acme.ini`:
+## 🟦 1. Sensor AEs
 
-```ini
-[cse]
-registrar = http://192.168.0.102:8080
-id = id-mn
+### ESP32
+```
+/cse-in/ESP32
+/cse-in/ESP32/temperature
 ```
 
-Launch:
-
-```bash
-python3 -m acme
-```
-
-Verify:
-
-```bash
-curl -X GET http://192.168.0.102:8080/cse-in?rcn=6 \
-  -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: reqCheckMN" \
-  -H "Accept: application/json"
-```
-
-Look for `cbA_id-mn_XXXX`.
-
----
-
-## 4️⃣ Create an AE (Application Entity)
-
-```bash
-curl -X POST \
-  http://192.168.0.101:8080/cse-mn \
-  -H "X-M2M-Origin: CSeeed" \
-  -H "X-M2M-RI: reqAE1" \
-  -H "X-M2M-RVI: 3" \
-  -H "Content-Type: application/json;ty=2" \
-  -d '{
-    "m2m:ae": {
-      "rn": "SeeedStudioXIAO",
-      "api": "N.seeed",
-      "rr": true,
-      "srv": ["3"],
-      "lbl": ["Seeed Studio XIAO"],
-      "at": ["/id-in"],
-      "aa": ["lbl", "rn", "api"]
-    }
-  }'
-```
-
----
-
-## 5️⃣ Create a Container for Sensor Data
-
-```bash
-curl -X POST \
-  http://192.168.0.101:8080/cse-mn/SeeedStudioXIAO \
-  -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: reqCNT1" \
-  -H "X-M2M-RVI: 3" \
-  -H "Content-Type: application/json;ty=3" \
-  -d '{
-    "m2m:cnt": {
-      "rn": "temperature",
-      "at": ["/id-in"],
-      "lbl": ["data:temperature", "type:sensor"],
-      "aa": ["lbl", "rn"]
-    }
-  }'
-
----
-
-## 6️⃣ Post a Content Instance (Sensor Data)
-
-```bash
-curl -X POST \
-  http://192.168.0.101:8080/cse-mn/SeeedStudioXIAO/temperature \
-  -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: reqCIN1" \
-  -H "X-M2M-RVI: 3" \
-  -H "X-M2M-TY: 4" \
-  -H "Content-Type: application/json;ty=4" \
-  -H "Accept: application/json" \
-  -d '{
-    "m2m:cin": {
-      "con": "{\"tempC\":24.4}",
-      "at": ["/id-in"],
-      "aa": ["con"]
-    }
-  }'
-```
-
----
-
-# 🆕 MAC Address & RSSI Support
-
-Our setup supports:
-
-- **MAC address** → unique device identity  
-- **RSSI** → signal strength used for handover logic  
-
-### Example CIN with MAC + RSSI:
+Content instances here carry JSON:
 
 ```json
 {
-  "tempC": 24.4,
-  "mac": "AA:BB:CC:DD:EE:FF",
-  "rssi": -67
+  "device": "ESP32",
+  "tempC": 21.3
 }
 ```
 
-### Mock generator:
-
-```bash
-cd python
-python3 uart.py
+### SEEED_XIAO
 ```
-
-It posts:
-
-- Temperature  
-- Pressure  
-- Humidity  
-- **MAC**  
-- **RSSI**  
-
-every 5 seconds.
+/cse-in/SEEED_XIAO/temperature
+```
 
 ---
 
-## 7️⃣ Create a Subscription → Django
+## 🟦 2. Gateway AEs
+
+### gw‑A
+```
+/cse-in/gw-A
+  /scan
+  /inbox
+```
+
+### gw‑B
+```
+/cse-in/gw-B
+  /scan
+  /inbox
+```
+
+### POSTs into `/scan`
+Gateways publish RSSI telemetry:
+
+```json
+{
+  "mac": "D2:29:B2:D0:66:FC",
+  "rssi": -57,
+  "connected": false
+}
+```
+
+### POSTs into `/inbox`
+Orchestrator writes:
+
+```json
+{
+  "cmd": "WL_ADD",
+  "mac": "D2:29:B2:D0:66:FC"
+}
+```
+
+Gateways receive them via Flask `/notify` and execute UART commands.
+
+---
+
+# 🔔 Django Subscription Model
+
+You create subscriptions pointing to:
+
+```
+AE/temperature → Django notify
+AE/scan        → Django notify
+```
+
+Example:
 
 ```bash
-curl -X POST \
-  http://192.168.0.102:8080/cse-in/cbA_id-mn_WeFgxO8cud/aeA_5t9jDiTzH9/cntA_IZNkcs47HG \
-  -H "X-M2M-Origin: CAdmin" \
-  -H "X-M2M-RI: 12345" \
-  -H "X-M2M-RVI: 5" \
-  -H "Content-Type: application/json;ty=23" \
-  -d '{
+curl -X POST http://<IN-IP>:8080/cse-in/ESP32/temperature   -H "X-M2M-Origin: CAdmin"   -H "Content-Type: application/json;ty=23"   -d '{
     "m2m:sub": {
-      "rn": "sub_esp32_temp",
-      "nu": ["http://192.168.0.102:8000/notify/"],
+      "rn": "sub_temp_esp32",
+      "nu": ["http://<Django-IP>:8000/notify/"],
       "nct": 1,
       "enc": { "net": [3] }
     }
@@ -226,215 +178,156 @@ curl -X POST \
 
 ---
 
-## 8️⃣ Run Django Frontend
+# 🧠 Data Flow: End‑to‑End
 
-```bash
-make setup
+### ➤ Sensor → Gateway → IN‑CSE → Django → Handover → Gateway
+
+1. **XIAO / ESP32 sends sensor packet**
+2. **Gateway extracts temp/RSSI**
+3. **Gateway posts CIN**
+4. **ACME stores CIN**
+5. **ACME notifies Django**
+6. **Django save handlers update DB**
+7. **Django evaluates handover**
+8. **If needed → writes commands to gw-A/gw-B inbox**
+9. **Gateway receives inbox CIN and executes UART commands**
+10. **Device reconnects → new RSSI → loop continues**
+
+---
+
+# 🛰 Handover Rules (Recap)
+
+Django logic:
+
+```python
+if current_rssi > best_rssi - margin:
+    do nothing
+
+if current_rssi > bad_threshold:
+    do nothing
+
+if best_gateway == current_gateway:
+    do nothing
+
+trigger_handover(...)
+```
+
+---
+
+# 🎨 UI Integration
+
+Device detail page displays:
+
+- latest temperature  
+- converted Fahrenheit value  
+- status badge (Optimal / Cool / Warm / Cold / Hot)  
+- **current gateway from HandoverState**  
+
+Template displays:
+
+```html
+<strong>{{ current_gateway }}</strong>
+```
+
+And can be auto‑refreshed similarly to temperature.
+
+---
+
+# 🛠 Gateway Flask/Serial Interface
+
+Gateways expose:
+
+```
+POST /notify
+```
+
+Receives:
+
+```json
+{ "cmd": "WL_ADD", "mac": "XX:XX..." }
+```
+
+Executes UART:
+
+```
+WL_ADD <mac>
+WL_DEL <mac>
+DC <mac>
+```
+
+---
+
+# 📦 Install & Run Instructions
+
+## 1. Start ACME
+```
+python3 -m acme
+```
+
+## 2. Start Django
+```
 make run
 ```
 
-Open:
+## 3. Start each gateway
+```
+python3 gateway.py
+```
+
+## 4. Verify CSE Tree  
+Open web UI:
 
 ```
-http://127.0.0.1:8000
-```
-
----
-
-## 9️⃣ Verify Data Flow
-
-Django output example:
-
-```
-🌡️ tempC: 24.4
-MAC: AA:BB:CC:DD:EE:FF
-RSSI: -67
+http://<IN-IP>:8080
 ```
 
 ---
 
-## 🔟 Adding More Devices
+# 🧪 Testing
 
-Repeat AE → CNT → SUB steps.  
-Dashboard updates automatically.
-
----
-
-# 🔧 Important: Adjusting URLs for Your Network & oneM2M Resources
-
-Because oneM2M runs on your **local Wi-Fi network**, all URLs in this guide must be updated to match:
-
-- Your **actual device IP addresses**
-- Your **actual announced AE / CNT paths**
-- Your **Django server IP**
-- Your **IN-CSE IP**
-
-Copy/pasting the examples without adjusting these values will result in failed registrations, broken subscriptions, or missing notifications.
-
----
-
-## 🟦 1. Update the IP Address Based on Your Machine
-
-### IN-CSE (ACME) runs on your laptop  
-Find your laptop’s LAN IP:
+### Send fake temp CIN:
 
 ```bash
-hostname -I
+curl -X POST http://<IN-IP>:8080/cse-in/ESP32/temperature   -H "Content-Type: application/json;ty=4"   -H "X-M2M-Origin: CAdmin"   -d '{"m2m:cin":{"con":"{"tempC":24.4}"}}'
 ```
 
-Use this IP instead of `127.0.0.1` in **ALL ACME API calls**, e.g.:
-
-```
-http://192.168.x.x:8080/cse-in
-```
-
-### Django Frontend also runs on the laptop
-
-Your subscription **nu** MUST be:
-
-```
-http://192.168.x.x:8000/notify/
-```
-
-**Never use `127.0.0.1` unless you are running curl from the same laptop running Django.**
-
----
-
-## 🟦 2. Update AE / CNT Resource Paths Based on What ACME Creates
-
-ACME assigns **dynamic** names when MN-CSEs register to the IN-CSE.  
-Your actual resource tree may look like:
-
-```
-cbA_id-mn_abcd1234       → remoteCSE (MN-CSE announcement)
-  └── aeA_XYZ123         → Announced AE
-        └── cntA_hello99 → Announced container
-```
-
-To view the current names:
+### Send fake RSSI CIN:
 
 ```bash
-curl -X GET http://<IN-IP>:8080/cse-in?rcn=6 -H "X-M2M-Origin: CAdmin"
+curl -X POST http://<IN-IP>:8080/cse-in/gw-A/scan   -H "Content-Type: application/json;ty=4"   -d '{"m2m:cin":{"con":"{"mac":"AA:BB","rssi":-90}"}}'
 ```
 
-Then scroll until you find:
-
-- `m2m:cb`  → remoteCSE  
-- `m2m:aeAnnc` → announced AE  
-- `m2m:cntAnnc` → announced container  
-
-Use **these exact values** in your subscription URL:
+Django should print:
 
 ```
-http://<IN-IP>:8080/cse-in/<cbA_id-mn_xxx>/<aeA_xxx>/<cntA_xxx>
+📡 DB: Saved RSSI -90 for AA:BB via gw-A
 ```
 
 ---
 
-## 🟦 3. Update Which Container You Are Posting To
+# 🐛 Troubleshooting
 
-If your AE has multiple containers, e.g.:
-
-- `temperature`
-- `pressure`
-- `humidity`
-
-Then your CIN POST URL must match the container you want to update:
-
-**Example:**
-
-Temperature:
-```
-/cse-mn/SeeedStudioXIAO/temperature
-```
-
-Humidity:
-```
-/cse-mn/SeeedStudioXIAO/humidity
-```
-
-Pressure:
-```
-/cse-mn/SeeedStudioXIAO/pressure
-```
+| Problem | Cause | Fix |
+|--------|-------|-----|
+| No /notify callbacks | Wrong Django IP | Use LAN IP, not 127.0.0.1 |
+| Gateways not receiving WL_ADD | Wrong inbox URL | Must be `/cse-in/gw-A/inbox` |
+| Duplicate AEs | Didn't purge ACME state | Delete ACME `data/` folder |
+| Handover oscillation | RSSI margin too small | Increase `RSSI_HANDOVER_MARGIN` |
 
 ---
 
-## 🟦 4. Update Subscription Targets per Container
+# 🏁 Final Notes
 
-If you want Django to receive notifications for *pressure* instead of *temperature*, then:
+Your system is now:
 
-Replace:
+- Clean  
+- Single‑CSE  
+- Proper gateway AEs  
+- Full handover logic  
+- Real‑time dashboard  
+- Real BLE devices  
 
-```
-cntA_IZNkcs47HG
-```
+This README reflects the **exact architecture you are running today**.
 
-with the correct **announced “pressure” container**.
-
----
-
-## 🟦 5. Summary of What You Must Always Update Manually
-
-Before running any curl command, confirm:
-
-| Item | Where to Get It |
-|------|-----------------|
-| IN-CSE IP | `hostname -I` on laptop |
-| Django IP | Same as IN-CSE |
-| MN-CSE IP | `hostname -I` on Raspberry Pi |
-| AE Name | From AE creation |
-| CNT Name | From your CNT creation |
-| Announced paths | From `cse-in?rcn=6` |
-| Notification URL | Must match Django IP |
-
-If ANY of these differ, your CIN posts or subscriptions will not work.
-
----
-
-## 🟦 Example of a Fully Updated Subscription (Template)
-
-```bash
-curl -X POST   http://<IN-IP>:8080/cse-in/<remoteCSE>/<AEAnnc>/<CNTAnnc>   -H "X-M2M-Origin: CAdmin"   -H "X-M2M-RI: sub001"   -H "X-M2M-RVI: 5"   -H "Content-Type: application/json;ty=23"   -d '{
-    "m2m:sub": {
-      "rn": "my_subscription",
-      "nu": ["http://<DASHBOARD-IP>:8000/notify/"],
-      "nct": 1,
-      "enc": { "net": [3] }
-    }
-  }'
-```
-
-Replace only the parts inside brackets `<>`.
-
-
-
-✔️ Once you understand this section, you can work with ANY oneM2M deployment.
-
-
-## ⚙️ Troubleshooting
-
-| Issue | Fix |
-|------|-----|
-| `No route to host` | Ensure devices are on same network |
-| Subscription not firing | Must use `/notify/` with trailing slash |
-| ACME state corrupted | Delete ACME `data/` directory |
-| Debug CSE | `python3 -m acme -d` |
-
----
-
-## 🧠 Tips
-
-- Use `hostname -I` for Pi IP  
-- Keep `acme.ini` backups  
-- Restart ACME after config changes  
-
----
-
-## 📡 Common WiFi Commands
-
-```
-sudo nmcli dev wifi list
-sudo nmcli --ask dev wifi connect "oneM2M_Local" password "Coleisthebest" name "home2"
-```
+If you want diagrams, animations, separate docs for gateway/device/Django, I can generate those too.
 

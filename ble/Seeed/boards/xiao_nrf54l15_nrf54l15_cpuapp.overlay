@@ -1,0 +1,18 @@
+/ {
+    sensor_sim: sensor_sim {
+        compatible = "nordic,sensor-sim";
+        acc-signal = "wave";
+        acc-wave-type = "triangle";
+        acc-wave-amplitude = <10>;
+    };
+};
+
+&uart20 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+&i2c30 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>; /* 100 kHz */
+};
