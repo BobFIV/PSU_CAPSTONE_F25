@@ -267,3 +267,5 @@ def analytics_page(request):
         "ui/analytics.html",
         {"devices": devices, "devices_json": json.dumps(list(devices))}
     )
+
+#Test
