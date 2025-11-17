@@ -268,4 +268,4 @@ def analytics_page(request):
         {"devices": devices, "devices_json": json.dumps(list(devices))}
     )
 
-#Test
+#Test2
