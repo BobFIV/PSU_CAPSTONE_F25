@@ -30,7 +30,7 @@ This README explains  IN‑CSE resource tree and how it matches gateway code, Dj
                           CNT: inbox          CNT: inbox
 ```
 
-This matches exactly what your CSE tree shows:
+Here is another example of the CSE layout
 
 ```
 CSE:
@@ -46,12 +46,6 @@ CSE:
 ```
 
 ---
-
-# 🎯 High‑Level Summary
-
-### ✔ IN‑CSE only  
-You run **one** ACME instance (IN‑CSE) on your laptop.  
-Gateways do **not** run MN‑CSEs. Gateways are simply **AEs**.
 
 ### ✔ Gateways register themselves  
 `gw-A` and `gw-B` create:
@@ -85,7 +79,7 @@ Django:
 
 ---
 
-# 🔧 ACME Resource Breakdown (Your Actual Layout)
+# 🔧 ACME Resource Breakdown
 
 ## 🟦 1. Sensor AEs
 
@@ -193,7 +187,7 @@ curl -X POST http://<IN-IP>:8080/cse-in/ESP32/temperature   -H "X-M2M-Origin: CA
 
 ---
 
-# 🛰 Handover Rules (Recap)
+# 🛰 Handover Rules
 
 Django logic:
 
