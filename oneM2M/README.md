@@ -1,12 +1,10 @@
 # oneM2M Local IN‑CSE Architecture (Gateways + Devices + Django Dashboard)
 
-This README explains **your current architecture**, based on the updated structure of the IN‑CSE resource tree and how it matches your gateway code, Django orchestrator logic, and BLE device data flow.
-
-It replaces the old multi‑CSE (IN‑CSE + MN‑CSE) guide with a **clean, simplified explanation** of your actual setup.
+This README explains  IN‑CSE resource tree and how it matches gateway code, Django orchestrator logic, and BLE device data flow.
 
 ---
 
-# 📡 System Architecture (Updated)
+# 📡 System Architecture
 
 ```
                     ┌─────────────────────────────┐
@@ -315,19 +313,3 @@ Django should print:
 | Handover oscillation | RSSI margin too small | Increase `RSSI_HANDOVER_MARGIN` |
 
 ---
-
-# 🏁 Final Notes
-
-Your system is now:
-
-- Clean  
-- Single‑CSE  
-- Proper gateway AEs  
-- Full handover logic  
-- Real‑time dashboard  
-- Real BLE devices  
-
-This README reflects the **exact architecture you are running today**.
-
-If you want diagrams, animations, separate docs for gateway/device/Django, I can generate those too.
-
