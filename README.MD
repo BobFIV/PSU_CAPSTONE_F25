@@ -1,4 +1,4 @@
-# 🚀 PSU_CAPSTONE_F25 — IoT Handover Framework
+# IoT Handover Framework
 
 ## 🌐 Overview
 
@@ -9,7 +9,7 @@ All components run **entirely inside a local Wi-Fi network**, enabling a telco-s
 
 ### 🧠 Core Concepts
 
-- Multiple **MN-CSE gateways** (Raspberry Pis)
+- Multiple **gateways** (Raspberry Pis)
 - One **IN-CSE coordinator** (laptop/server)
 - Devices (ESP32 / Seeed XIAO) send sensor + RSSI data
 - IN-CSE orchestrator makes **handover decisions**
@@ -36,6 +36,7 @@ CloudAppAE (Django Dashboard)
 ```
 PSU_CAPSTONE_F25/
 │
+├── ble/                            # BLE sensing system with RSSI handover
 ├── demoApp/                        # CloudAppAE Django Frontend
 ├── oneM2M/                         # IN-CSE + MN-CSE setup + handover simulation
 ├── setup.sh                        # Environment bootstrapper
@@ -51,7 +52,7 @@ The system consists of **three components**:
 
 1. **CloudAppAE WebApp** (`demoApp/`)
 2. **IN-CSE Central Coordinator** (`oneM2M/`)
-3. **MN-CSE Gateways** (Raspberry Pis)
+3. **Gateways** (Raspberry Pis)
 
 Each has its own README with full instructions.
 
@@ -109,8 +110,8 @@ Used for validating handover logic before embedded RSSI integration.
 |----------|--------|-------|
 | CloudAppAE Dashboard | ✔️ Stable | Live RSSI, devices, handovers |
 | IN-CSE Orchestrator | 🟡 Partial | Basic algorithm; full MAC/RSSI integration pending |
-| MN-CSE Gateways | 🟡 Working | Posting CINs, reporting RSSI |
-| Sensor Nodes | 🟡 In Progress | UART → MN-CSE pipeline being finalized |
+| Gateways | 🟡 Working | Posting CINs, reporting RSSI |
+| Sensor Nodes | 🟡 Working | UART → Gateway pipeline being finalized |
 
 ---
 

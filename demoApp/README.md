@@ -45,8 +45,6 @@ demoApp/
 │   ├── views.py                # Core logic + /notify endpoint
 │   ├── urls.py                 # Routing
 │   └── apps.py
-│
-├── scripts/                    # AE + container creation tools
 └── manage.py                   # Django app launcher
 ```
 
